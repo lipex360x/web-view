@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "web-view"
+version = "0.1.0"
+description = "Project-agnostic toolkit for driving Chrome via the Chrome DevTools Protocol (CDP) on top of Playwright. Wait-on-state, never on time."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Felipe Bambirra", email = "lipex360@gmail.com" }]
+keywords = ["chrome", "cdp", "playwright", "automation", "web-scraping", "browser"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Internet :: WWW/HTTP :: Browsers",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = [
+  "playwright>=1.40",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "pre-commit>=3.7",
+]
+
+[project.scripts]
+web-view = "web_view.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/lipex360x/web-view"
+Repository = "https://github.com/lipex360x/web-view"
+Issues = "https://github.com/lipex360x/web-view/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/web_view"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_ignores = true
+ignore_missing_imports = true
