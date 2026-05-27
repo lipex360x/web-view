@@ -81,10 +81,11 @@ uv run --with git+https://github.com/lipex360x/web-view web-view list
 ### 1. Start a CDP Chrome
 
 ```bash
-web-view start --port 9222 --user-data-dir ~/.cache/web-view/profile
+web-view start --port 9222 --user-data-dir ~/.cache/web-view/profile \
+  --url file:///path/to/index.html
 ```
 
-This launches your real Chrome with `--remote-debugging-port=9222` and a persistent profile (so cookies, logins, extensions survive across runs). You can also do this manually:
+This launches your real Chrome with `--remote-debugging-port=9222` and a persistent profile (so cookies, logins, extensions survive across runs). The optional `--url` flag opens that URL in the first tab right after Chrome becomes CDP-ready. You can also do this manually:
 
 ```bash
 google-chrome \
@@ -101,9 +102,13 @@ web-view list
 ```
 
 ```
-    PID   PORT  USER_DATA_DIR
-  41822   9222  /Users/you/.cache/web-view/profile
+    PID   PORT  USER_DATA_DIR                              TABS
+  41822   9222  /Users/you/.cache/web-view/profile         2
+                                                            ├─ file:///path/to/index.html  "Home"
+                                                            └─ chrome://newtab
 ```
+
+Each running instance is queried over CDP for its open tabs. If the instance refuses the short-lived connection (mid-shutdown, busy), the `TABS` column shows `?` instead of erroring out.
 
 ### 3. Snapshot any tab
 
@@ -112,6 +117,18 @@ web-view snap homepage --url-contains example.com --destination-dir ./captures
 ```
 
 You get `captures/01-homepage.png` + `captures/01-homepage.aria.yaml`. The PNG is for humans (review what you saw). The ARIA YAML is for selectors — it dumps the accessibility tree so you can find any element by `role` + accessible `name` without hunting for CSS selectors.
+
+The command prints the two absolute paths to stdout (PNG first, ARIA YAML second), so you can pipe them straight into other tools:
+
+```bash
+$ web-view snap homepage --url-contains example.com
+/Users/you/captures/01-homepage.png
+/Users/you/captures/01-homepage.aria.yaml
+
+$ web-view snap | head -1 | xargs open   # auto-slug + open the PNG
+```
+
+The slug is optional: `web-view snap` (no positional) writes `NN-snap.{png,aria.yaml}` using the next free index.
 
 ### 4. Drive it from Python
 
@@ -126,7 +143,7 @@ with cdp.connect(port=9222) as (browser, context):
     cdp.press(page, "Enter")
 
     cdp.wait_for_url(page, lambda url: "/results" in url, timeout_s=10)
-    cdp.dual_snapshot(page, "search-results", destination_dir="./captures")
+    cdp.dual_snapshot(page, "search-results", dest_dir="./captures")
 ```
 
 ### 5. Stop the Chrome you started
@@ -140,11 +157,14 @@ web-view stop --port 9222
 ## CLI reference
 
 ```
-web-view start [--port 9222] [--user-data-dir DIR] [--headless]
+web-view start [--port 9222] [--user-data-dir DIR] [--headless] [--url URL]
 web-view list
-web-view stop  [--port 9222]
-web-view snap  <slug> [--port 9222] [--url-contains STR] [--destination-dir DIR]
+web-view stop  [--port PORT]   # omit --port when exactly one instance is running
+web-view snap  [slug]          # slug defaults to "snap"
+               [--port 9222] [--url-contains STR] [--destination-dir DIR]
 ```
+
+`web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks.
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 
