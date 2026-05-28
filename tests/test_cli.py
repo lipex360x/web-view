@@ -918,9 +918,7 @@ def test_resize_viewport_ack_says_viewport(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     _seed_single_instance(fake_cdp)
-    exit_code = _run(
-        ["resize", "--width", "800", "--height", "600", "--viewport"]
-    )
+    exit_code = _run(["resize", "--width", "800", "--height", "600", "--viewport"])
     assert exit_code == 0
     captured = capsys.readouterr()
     lines = [line for line in captured.out.splitlines() if line.strip()]
@@ -944,9 +942,7 @@ def test_resize_tab_by_index_picks_indexed_tab(fake_cdp: dict[str, Any]) -> None
         make_fake_page(page_url="https://first.test", page_title="1st"),
         second_page,
     ]
-    exit_code = _run(
-        ["resize", "--width", "1280", "--height", "720", "--tab", "1"]
-    )
+    exit_code = _run(["resize", "--width", "1280", "--height", "720", "--tab", "1"])
     assert exit_code == 0
     call = fake_cdp["set_window_size_calls"][0]
     assert call["positional"][0] is second_page
@@ -957,9 +953,7 @@ def test_resize_explicit_port_no_instance_structured_error(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     fake_cdp["instances"] = []
-    exit_code = _run(
-        ["resize", "--port", "9222", "--width", "1280", "--height", "720"]
-    )
+    exit_code = _run(["resize", "--port", "9222", "--width", "1280", "--height", "720"])
     assert exit_code != 0
     captured = capsys.readouterr()
     assert "No CDP Chrome instance on port 9222" in captured.err

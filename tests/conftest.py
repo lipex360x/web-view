@@ -233,5 +233,7 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     for verb in _INTERACTION_VERBS:
         monkeypatch.setattr(cdp_module, verb, _make_interaction_recorder(state, verb))
     for verb in _WINDOW_VERBS:
-        monkeypatch.setattr(cdp_module, verb, _make_interaction_recorder(state, verb), raising=False)
+        monkeypatch.setattr(
+            cdp_module, verb, _make_interaction_recorder(state, verb), raising=False
+        )
     return state

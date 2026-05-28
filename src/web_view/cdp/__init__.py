@@ -133,6 +133,7 @@ from ._state import (
     set_storage_item,
     write_clipboard,
 )
+from ._window import set_viewport, set_window_size
 
 __all__ = [
     "CDP_URL",
@@ -179,6 +180,8 @@ __all__ = [
     "scroll_into_view",
     "set_cookie",
     "set_storage_item",
+    "set_viewport",
+    "set_window_size",
     "start_chrome",
     "stop_chrome",
     "switch_to_tab",
