@@ -790,3 +790,192 @@ def test_do_click_help_has_examples_epilog(
         _run(["do", "click", "--help"])
     captured = capsys.readouterr()
     assert "Examples" in captured.out
+
+
+def test_start_window_size_passes_through(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["pages"] = [make_fake_page(page_url="about:blank", page_title="")]
+    exit_code = _run(
+        [
+            "start",
+            "--port",
+            "9445",
+            "--user-data-dir",
+            str(tmp_path / "profile"),
+            "--headless",
+            "--window-size",
+            "1280x720",
+        ]
+    )
+    assert exit_code == 0
+    assert fake_cdp["started"]["window_size"] == (1280, 720)
+
+
+def test_start_default_window_size_unchanged(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["pages"] = [make_fake_page(page_url="about:blank", page_title="")]
+    exit_code = _run(
+        [
+            "start",
+            "--port",
+            "9446",
+            "--user-data-dir",
+            str(tmp_path / "profile"),
+            "--headless",
+        ]
+    )
+    assert exit_code == 0
+    assert fake_cdp["started"]["window_size"] == (1920, 1080)
+
+
+def test_start_window_size_invalid_format_errors(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit):
+        _run(
+            [
+                "start",
+                "--port",
+                "9447",
+                "--user-data-dir",
+                str(tmp_path / "profile"),
+                "--window-size",
+                "FOO",
+            ]
+        )
+    captured = capsys.readouterr()
+    assert "WxH" in captured.err or "window-size" in captured.err
+
+
+def test_resize_invokes_set_window_size(fake_cdp: dict[str, Any]) -> None:
+    _seed_single_instance(fake_cdp)
+    exit_code = _run(["resize", "--width", "1280", "--height", "720"])
+    assert exit_code == 0
+    call = fake_cdp["set_window_size_calls"][0]
+    assert call["keyword"]["width"] == 1280
+    assert call["keyword"]["height"] == 720
+
+
+def test_resize_viewport_flag_uses_set_viewport(fake_cdp: dict[str, Any]) -> None:
+    _seed_single_instance(fake_cdp)
+    exit_code = _run(["resize", "--width", "800", "--height", "600", "--viewport"])
+    assert exit_code == 0
+    assert fake_cdp["set_window_size_calls"] == []
+    call = fake_cdp["set_viewport_calls"][0]
+    assert call["keyword"]["width"] == 800
+    assert call["keyword"]["height"] == 600
+
+
+def test_resize_requires_width_and_height(
+    fake_cdp: dict[str, Any],
+) -> None:
+    _seed_single_instance(fake_cdp)
+    with pytest.raises(SystemExit):
+        _run(["resize", "--width", "1280"])
+    with pytest.raises(SystemExit):
+        _run(["resize", "--height", "720"])
+
+
+def test_resize_port_optional_auto_resolves(fake_cdp: dict[str, Any]) -> None:
+    _seed_single_instance(fake_cdp)
+    exit_code = _run(["resize", "--width", "1280", "--height", "720"])
+    assert exit_code == 0
+    assert len(fake_cdp["set_window_size_calls"]) == 1
+
+
+def test_resize_zero_instances_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = []
+    exit_code = _run(["resize", "--width", "1280", "--height", "720"])
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "No CDP Chrome instances running" in captured.err
+    assert fake_cdp["set_window_size_calls"] == []
+
+
+def test_resize_prints_one_line_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _seed_single_instance(fake_cdp)
+    exit_code = _run(["resize", "--width", "1280", "--height", "720"])
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    lines = [line for line in captured.out.splitlines() if line.strip()]
+    assert lines == ["resized: 1280x720"]
+
+
+def test_resize_viewport_ack_says_viewport(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _seed_single_instance(fake_cdp)
+    exit_code = _run(
+        ["resize", "--width", "800", "--height", "600", "--viewport"]
+    )
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    lines = [line for line in captured.out.splitlines() if line.strip()]
+    assert lines == ["viewport set: 800x600"]
+
+
+def test_resize_quiet_silences_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _seed_single_instance(fake_cdp)
+    exit_code = _run(["resize", "--width", "1280", "--height", "720", "--quiet"])
+    assert exit_code == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_resize_tab_by_index_picks_indexed_tab(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    second_page = make_fake_page(page_url="https://second.test", page_title="2nd")
+    fake_cdp["pages"] = [
+        make_fake_page(page_url="https://first.test", page_title="1st"),
+        second_page,
+    ]
+    exit_code = _run(
+        ["resize", "--width", "1280", "--height", "720", "--tab", "1"]
+    )
+    assert exit_code == 0
+    call = fake_cdp["set_window_size_calls"][0]
+    assert call["positional"][0] is second_page
+
+
+def test_resize_explicit_port_no_instance_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = []
+    exit_code = _run(
+        ["resize", "--port", "9222", "--width", "1280", "--height", "720"]
+    )
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "No CDP Chrome instance on port 9222" in captured.err
+
+
+def test_root_help_lists_resize(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["--help"])
+    captured = capsys.readouterr()
+    assert "resize" in captured.out
+
+
+def test_resize_help_has_examples_epilog(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit):
+        _run(["resize", "--help"])
+    captured = capsys.readouterr()
+    assert "Examples" in captured.out

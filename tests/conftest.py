@@ -96,11 +96,18 @@ def _make_stop_chrome(state: dict[str, Any]) -> Any:
 
 
 def _make_start_chrome(state: dict[str, Any]) -> Any:
-    def fake_start_chrome(*, port: int, user_data_dir: str | Path, headless: bool = False) -> Any:
+    def fake_start_chrome(
+        *,
+        port: int,
+        user_data_dir: str | Path,
+        headless: bool = False,
+        window_size: tuple[int, int] = (1920, 1080),
+    ) -> Any:
         state["started"] = {
             "port": port,
             "user_data_dir": str(user_data_dir),
             "headless": headless,
+            "window_size": window_size,
         }
         return SimpleNamespace(pid=12345)
 
@@ -193,6 +200,8 @@ _INTERACTION_VERBS = (
     "drag",
 )
 
+_WINDOW_VERBS = ("set_window_size", "set_viewport")
+
 
 @pytest.fixture
 def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
@@ -209,6 +218,8 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     }
     for verb in _INTERACTION_VERBS:
         state[f"{verb}_calls"] = []
+    for verb in _WINDOW_VERBS:
+        state[f"{verb}_calls"] = []
     monkeypatch.setattr(cdp_module, "list_cdp_instances", _make_list_instances(state))
     monkeypatch.setattr(cdp_module, "stop_chrome", _make_stop_chrome(state))
     monkeypatch.setattr(cdp_module, "start_chrome", _make_start_chrome(state))
@@ -221,4 +232,6 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(cdp_module, "open_tab", _make_open_tab(state))
     for verb in _INTERACTION_VERBS:
         monkeypatch.setattr(cdp_module, verb, _make_interaction_recorder(state, verb))
+    for verb in _WINDOW_VERBS:
+        monkeypatch.setattr(cdp_module, verb, _make_interaction_recorder(state, verb), raising=False)
     return state
