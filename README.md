@@ -1,8 +1,27 @@
 # web-view
 
-Project-agnostic toolkit for driving Chrome via the **Chrome DevTools Protocol (CDP)** on top of Playwright's sync API. One Python module (~900 lines), zero project-specific dependencies, designed for in-depth research and scripted exploration of any website.
+[![Release](https://img.shields.io/github/v/release/lipex360x/web-view?label=release)](https://github.com/lipex360x/web-view/releases)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-> **Golden rule:** wait on state changes, never on time. No `wait_for_timeout`, no `time.sleep`. `timeout_s=N` is always an upper bound — the call returns the instant the state changes.
+> Project-agnostic toolkit for driving Chrome via the Chrome DevTools Protocol on top of Playwright's sync API. Wait on state, never on time.
+
+> [!IMPORTANT]
+> **Wait on state changes, never on time.** No `wait_for_timeout`, no `time.sleep`. `timeout_s=N` is always an upper bound — the call returns the instant the state changes.
+
+## Contents
+
+- [Why](#why)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [CLI reference](#cli-reference)
+- [Library reference](#library-reference)
+- [Conventions](#conventions)
+- [Real-world recipes](#real-world-recipes)
+- [Cross-platform notes](#cross-platform-notes)
+- [Development](#development)
+- [Project links](#project-links)
+- [Acknowledgements](#acknowledgements)
 
 ---
 
@@ -73,6 +92,8 @@ with cdp.connect() as (browser, context):
 ```bash
 uv run --with git+https://github.com/lipex360x/web-view web-view list
 ```
+
+<div align="right"><a href="#contents">↑ Back to top</a></div>
 
 ---
 
@@ -167,6 +188,8 @@ with cdp.connect(port=9222) as (browser, context):
 web-view stop --port 9222
 ```
 
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
 ---
 
 ## CLI reference
@@ -192,9 +215,13 @@ web-view do       <verb>          # click | fill | check | press | hover | dblcl
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
 ---
 
 ## Library reference
+
+> [Chrome lifecycle](#chrome-lifecycle) · [Connect + tab selection](#connect--tab-selection) · [Navigation + waiting](#navigation--waiting) · [Element interaction](#element-interaction-by-aria-role--name) · [Downloads + uploads](#downloads--uploads) · [Cookies + storage + clipboard](#cookies--storage--clipboard) · [Snapshots + inspection](#snapshots--inspection) · [Recording console + network](#recording-console--network)
 
 ### Chrome lifecycle
 
@@ -328,6 +355,8 @@ cdp.dump_network(recorder, Path("./captures/network.json"))
 
 `NetworkRecorder` automatically parses JSON response bodies. `entry.response_json` is the parsed object; `entry.response_body` is the raw text/bytes fallback. `recorder.failed` returns entries that errored or returned 4xx/5xx.
 
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
 ---
 
 ## Conventions
@@ -352,6 +381,8 @@ cdp.dump_network(recorder, Path("./captures/network.json"))
 
 Fixed waits are simultaneously **too slow** (you wait the full duration even when ready in milliseconds) AND **too fragile** (you guess "enough time" and it breaks under load).
 
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
 ---
 
 ## Real-world recipes
@@ -371,7 +402,7 @@ with cdp.connect() as (browser, context):
     cdp.click(page, "button", "Continue")
 
     cdp.wait_for_url(page, lambda url: "/verify" in url, timeout_s=15)
-    cdp.dual_snapshot(page, "after-signup", destination_dir=Path("./captures"))
+    cdp.dual_snapshot(page, "after-signup", dest_dir=Path("./captures"))
 ```
 
 ### Capture an XHR response after clicking
@@ -432,6 +463,8 @@ with cdp.connect() as (_, context):
 
 Open `scratch/tree.yaml` in your editor — every element shows up as `- role "name"`. Pick the one you want, write the selector, re-run.
 
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
 ---
 
 ## Cross-platform notes
@@ -443,6 +476,8 @@ Open `scratch/tree.yaml` in your editor — every element shows up as `- role "n
   - Override via `cdp.start_chrome(binary="/custom/path")`.
 - **Process control** uses `pkill`/`os.killpg` on Unix and `taskkill`/`process.terminate()` on Windows. No manual platform branching needed in your code.
 - **User profile dir**: pick anywhere persistent. `~/.cache/web-view/profile` is the CLI default. Keep one per research project to avoid cross-contaminating logins.
+
+<div align="right"><a href="#contents">↑ Back to top</a></div>
 
 ---
 
@@ -469,11 +504,26 @@ Tests:
 uv run pytest
 ```
 
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
+---
+
+## Project links
+
+- **Releases & changelog:** <https://github.com/lipex360x/web-view/releases>
+- **Design decisions (ADRs):** [`docs/adr/`](docs/adr/) — start with [`0001-cli-interaction.md`](docs/adr/0001-cli-interaction.md) (records the `web-view do <verb>` family design).
+- **Issue tracker:** <https://github.com/lipex360x/web-view/issues>
+- **AI contributor guide:** [`CLAUDE.md`](CLAUDE.md) — the executable spec a fresh AI session should read before touching the repo.
+
+<div align="right"><a href="#contents">↑ Back to top</a></div>
+
 ---
 
 ## Acknowledgements
 
 `web-view` was extracted from the [`claude-brain`](https://github.com/lipex360x/claude-brain) repo where it grew up driving the GCP Console headed-Chrome bootstrap for the GWS integration. The discipline of "wait on state, never on time" came from too many flaky `sleep(2)` debugging sessions on that flow.
+
+<div align="right"><a href="#contents">↑ Back to top</a></div>
 
 ## License
 
