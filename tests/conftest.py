@@ -10,7 +10,6 @@ from typing import Any
 import pytest
 
 from web_view import cdp as cdp_module
-from web_view import cli as cli_module
 
 
 @dataclass
@@ -113,6 +112,16 @@ def _make_goto(state: dict[str, Any]) -> Any:
     return fake_goto
 
 
+def _make_open_tab(state: dict[str, Any]) -> Any:
+    def fake_open_tab(context: FakeContext, target_url: str, **_: Any) -> SimpleNamespace:
+        new_page = make_fake_page(page_url=target_url, page_title="")
+        context.pages.append(new_page)
+        state["open_tab_calls"].append((context, target_url))
+        return new_page
+
+    return fake_open_tab
+
+
 @pytest.fixture
 def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     state: dict[str, Any] = {
@@ -121,6 +130,7 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "stopped": [],
         "started": None,
         "goto_calls": [],
+        "open_tab_calls": [],
         "snapshots": [],
         "connect_raises": None,
         "ready": True,
@@ -134,5 +144,5 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(cdp_module, "pages_info", _make_pages_info())
     monkeypatch.setattr(cdp_module, "is_cdp_ready", _make_is_cdp_ready(state))
     monkeypatch.setattr(cdp_module, "goto", _make_goto(state))
-    monkeypatch.setattr(cli_module, "cdp", cdp_module)
+    monkeypatch.setattr(cdp_module, "open_tab", _make_open_tab(state))
     return state

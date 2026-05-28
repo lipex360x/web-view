@@ -157,14 +157,17 @@ web-view stop --port 9222
 ## CLI reference
 
 ```
-web-view start [--port 9222] [--user-data-dir DIR] [--headless] [--url URL]
+web-view start    [--port 9222] [--user-data-dir DIR] [--headless] [--url URL]
 web-view list
-web-view stop  [--port PORT]   # omit --port when exactly one instance is running
-web-view snap  [slug]          # slug defaults to "snap"
-               [--port 9222] [--url-contains STR] [--destination-dir DIR]
+web-view navigate --url URL [--port 9222] [--tab <index|substring> | --new-tab]
+web-view stop     [--port PORT]   # omit --port when exactly one instance is running
+web-view snap     [slug]          # slug defaults to "snap"
+                  [--port 9222] [--url-contains STR] [--destination-dir DIR]
 ```
 
-`web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks.
+`web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
+
+`web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, and `navigate`.
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 
@@ -202,7 +205,7 @@ with cdp.connect(port=9222) as (browser, context):    # context manager
 ### Navigation + waiting
 
 ```python
-cdp.goto(page, url, *, wait_until="domcontentloaded")
+cdp.goto(page, target_url, *, wait_until="domcontentloaded")
 cdp.wait_for_url(page, predicate, *, timeout_s=60) -> str
 cdp.back(page) / cdp.forward(page) / cdp.reload(page)
 ```
@@ -253,7 +256,7 @@ cdp.upload(page, "button", "Choose file", ["/path/to/file.pdf"])
 
 ```python
 cookies = cdp.get_cookies(context, urls=["https://example.com"])
-cdp.set_cookie(context, name="session", value="abc", url="https://example.com")
+cdp.set_cookie(context, name="session", value="abc", target_url="https://example.com")
 cdp.clear_cookies(context)
 
 ls = cdp.get_storage(page, kind="local")
@@ -267,7 +270,7 @@ cdp.write_clipboard(page, "hello")
 ### Snapshots + inspection
 
 ```python
-png_path, aria_path = cdp.dual_snapshot(page, "checkout", destination_dir=Path("./captures"))
+png_path, aria_path = cdp.dual_snapshot(page, "checkout", dest_dir=Path("./captures"))
 # captures/01-checkout.png  +  captures/01-checkout.aria.yaml
 
 cdp.screenshot(page, Path("./captures/full.png"), full_page=True)
@@ -297,7 +300,7 @@ with cdp.network_recorder(page, url_predicate=lambda url: "/api/" in url) as rec
     cdp.wait_for_url(page, lambda url: "/results" in url)
 
 for entry in recorder.filter(method="POST", status=200):
-    print(entry.url, entry.response_json)
+    print(entry.request_url, entry.response_json)
 
 cdp.dump_network(recorder, Path("./captures/network.json"))
 ```
