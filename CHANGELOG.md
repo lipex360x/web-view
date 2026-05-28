@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+
+- **`web-view do <verb>`** — element-interaction CLI family. Ten verbs graduate from library to CLI under a single parent: `click`, `fill`, `check`, `press`, `hover`, `dblclick`, `right-click`, `scroll-into-view`, `upload`, `drag`. Element addressing defaults to `--role + --name` (matches the `.aria.yaml` emitted by `web-view snap`); `--selector <css>` is the mutually exclusive escape hatch. Every verb accepts `--port` (auto-resolves like `navigate`/`snap`/`stop`), `--tab <index|substring>` (same semantics as `navigate`), `--timeout <seconds>` (default 15), and `--quiet`/`-q` to silence the success ack. `fill` reads its value from stdin when `--value` is omitted; `press` accepts a comma-separated chord list (`"Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax for `--from`/`--to`. Closes the read-yaml → act loop from `web-view snap` without dropping into a Python REPL. Design recorded in [ADR 0001](docs/adr/0001-cli-interaction.md).
+- Shared `cli/_shared.resolve_target_tab(context, selector)` extracted from `cli/_navigate._pick_tab` and reused by every `do <verb>` plus `navigate`.
+
+## [0.1.0] — 2026-05-28
+
+Initial tagged release. Captures the post-refactor stable surface.
+
 ### Changed (since last release)
 
 - **`web-view navigate` and `web-view snap`** now treat `--port` as optional, mirroring `web-view stop`. When exactly one CDP Chrome instance is running, the command picks it automatically; with zero or 2+ instances it exits with the same structured error as `stop`, listing the candidate `--port` values. The port-resolution logic is now a single helper (`cli/_shared.resolve_single_port`) reused by all three subcommands.

@@ -130,7 +130,22 @@ $ web-view snap | head -1 | xargs open   # auto-slug + open the PNG
 
 The slug is optional: `web-view snap` (no positional) writes `NN-snap.{png,aria.yaml}` using the next free index.
 
-### 4. Drive it from Python
+### 4. Click, fill, and press without leaving the shell
+
+`web-view snap` emits selectors as `role + name` pairs in the YAML — `web-view do <verb>` speaks the same vocabulary, so the read-yaml → act loop never needs a Python REPL:
+
+```bash
+web-view snap login                                       # captures 01-login.aria.yaml
+# In the YAML: `- button "Sign in"`, `- textbox "Email"`
+web-view do fill --role textbox --name "Email" --value "alice@example.com"
+web-view do fill --role textbox --name "Password" --value "secret"
+web-view do click --role button --name "Sign in"
+web-view snap after-login                                 # captures the new state
+```
+
+Every interaction verb (`click`, `fill`, `check`, `press`, `hover`, `dblclick`, `right-click`, `scroll-into-view`, `upload`, `drag`) accepts the same options: `--port`/`--tab` for instance + tab targeting, `--timeout` for the upper bound on element waits, `--quiet`/`-q` to silence the one-line success ack. CSS-first workflows use `--selector <css>` instead of `--role/--name`. See `web-view do -h` for the verb list and `web-view do <verb> -h` for per-command details.
+
+### 5. Drive it from Python
 
 ```python
 from web_view import cdp
@@ -146,7 +161,7 @@ with cdp.connect(port=9222) as (browser, context):
     cdp.dual_snapshot(page, "search-results", dest_dir="./captures")
 ```
 
-### 5. Stop the Chrome you started
+### 6. Stop the Chrome you started
 
 ```bash
 web-view stop --port 9222
@@ -163,11 +178,17 @@ web-view navigate --url URL [--port 9222] [--tab <index|substring> | --new-tab]
 web-view stop     [--port PORT]   # omit --port when exactly one instance is running
 web-view snap     [slug]          # slug defaults to "snap"
                   [--port 9222] [--url-contains STR] [--destination-dir DIR]
+web-view do       <verb>          # click | fill | check | press | hover | dblclick |
+                                  # right-click | scroll-into-view | upload | drag
+                  [--role R --name N | --selector CSS]
+                  [--port P] [--tab T] [--timeout S] [--quiet]
 ```
 
 `web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
 
-`web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, and `navigate`.
+`web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, `navigate`, and every `do <verb>`.
+
+`web-view do <verb>` is the no-Python convenience layer over the library's interaction helpers. Element addressing defaults to `--role + --name` (the same vocabulary `web-view snap` writes into the ARIA YAML); `--selector <css>` is the mutually exclusive escape hatch for CSS-first workflows. Per-verb specifics: `fill` reads stdin when `--value` is omitted (`web-view do fill --role textbox --name Body < message.txt`); `press` accepts a comma-separated chord list (`--keys "Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax (`--from "button:Item" --to "region:Trash"`); `upload` requires `--file <path>`. Every verb prints a one-line success ack on stdout (silenced with `--quiet`).
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 

@@ -8,6 +8,39 @@ from typing import Any
 from .. import cdp
 
 
+def _parse_tab_index(selector: str) -> int | None:
+    candidate = selector[1:] if selector.startswith("-") else selector
+    if candidate.isdigit():
+        return int(selector)
+    return None
+
+
+def resolve_target_tab(context: Any, selector: str | None) -> Any:
+    """Pick the tab a tab-bound command should target.
+
+    Selector forms (matching `web-view navigate --tab`):
+      - `None` (default)   → first non-helper tab, falling back to `pages[0]`
+      - integer string     → 0-based index (negatives count from the end)
+      - any other string   → URL substring; first match wins
+
+    Returns `None` if the selector cannot be resolved against the open tabs.
+    """
+    if selector is None:
+        page = cdp.find_page(context, url_contains="")
+        if page is not None:
+            return page
+        return context.pages[0] if context.pages else None
+    index = _parse_tab_index(selector)
+    if index is not None:
+        if not context.pages:
+            return None
+        try:
+            return context.pages[index]
+        except IndexError:
+            return None
+    return cdp.find_page(context, url_contains=selector)
+
+
 def print_no_instance_on_port(port: int) -> None:
     print(
         f"No CDP Chrome instance on port {port}.\n"
