@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Changed (since last release)
+
+- **`web-view navigate` and `web-view snap`** now treat `--port` as optional, mirroring `web-view stop`. When exactly one CDP Chrome instance is running, the command picks it automatically; with zero or 2+ instances it exits with the same structured error as `stop`, listing the candidate `--port` values. The port-resolution logic is now a single helper (`cli/_shared.resolve_single_port`) reused by all three subcommands.
+
 ### Added
 
 - `web-view navigate --url <URL>` loads a URL in an already-running CDP Chrome. Picks the target tab via `--tab <index|substring>` (defaults to the first non-helper tab) or opens a fresh one with `--new-tab`. `--tab` and `--new-tab` are mutually exclusive.
