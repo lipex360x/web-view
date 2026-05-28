@@ -100,23 +100,29 @@ def start_chrome(
     port: int = DEFAULT_CDP_PORT,
     user_data_dir: str | Path,
     headless: bool = False,
+    window_size: tuple[int, int] = (1920, 1080),
     extra_args: list[str] | None = None,
     binary: str | None = None,
 ) -> subprocess.Popen:
     """Launch Chrome with CDP on `port` and a persistent `user_data_dir`.
+
+    `window_size` is a `(width, height)` tuple forwarded to Chrome's
+    `--window-size=W,H` launch flag (default 1920x1080). Use
+    `cdp.set_window_size(page, ...)` to resize a running instance.
 
     Returns the spawned Popen. Chrome runs in its own process group on Unix
     so it survives the Python parent exiting.
     """
     if is_cdp_ready(port, timeout_s=1):
         raise RuntimeError(f"port {port} already has a CDP-listening Chrome")
+    width, height = window_size
     command_argv = [
         binary or _resolve_chrome_binary(),
         f"--remote-debugging-port={port}",
         "--no-first-run",
         "--no-default-browser-check",
         f"--user-data-dir={user_data_dir}",
-        "--window-size=1920,1080",
+        f"--window-size={width},{height}",
     ]
     if headless:
         command_argv.append("--headless=new")

@@ -196,6 +196,7 @@ web-view stop --port 9222
 
 ```
 web-view start    [--port 9222] [--user-data-dir DIR] [--headless] [--url URL]
+                  [--window-size WxH]              # default 1920x1080
 web-view list
 web-view navigate --url URL [--port 9222] [--tab <index|substring> | --new-tab]
 web-view stop     [--port PORT]   # omit --port when exactly one instance is running
@@ -205,6 +206,9 @@ web-view do       <verb>          # click | fill | check | press | hover | dblcl
                                   # right-click | scroll-into-view | upload | drag
                   [--role R --name N | --selector CSS]
                   [--port P] [--tab T] [--timeout S] [--quiet]
+web-view resize   --width W --height H              # OS window (default)
+                  [--viewport]                      # page viewport only
+                  [--port P] [--tab T] [--quiet]
 ```
 
 `web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
@@ -212,6 +216,8 @@ web-view do       <verb>          # click | fill | check | press | hover | dblcl
 `web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, `navigate`, and every `do <verb>`.
 
 `web-view do <verb>` is the no-Python convenience layer over the library's interaction helpers. Element addressing defaults to `--role + --name` (the same vocabulary `web-view snap` writes into the ARIA YAML); `--selector <css>` is the mutually exclusive escape hatch for CSS-first workflows. Per-verb specifics: `fill` reads stdin when `--value` is omitted (`web-view do fill --role textbox --name Body < message.txt`); `press` accepts a comma-separated chord list (`--keys "Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax (`--from "button:Item" --to "region:Trash"`); `upload` requires `--file <path>`. Every verb prints a one-line success ack on stdout (silenced with `--quiet`).
+
+`web-view resize` resizes a running Chrome window. Default mode targets the OS-level window (Chrome physically grows or shrinks on the desktop) via CDP `Browser.setWindowBounds`. `--viewport` switches to a page-only viewport override — useful for responsive-layout testing without disturbing the window manager. The initial size is controlled by `web-view start --window-size WxH` (default `1920x1080`).
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 
@@ -274,6 +280,9 @@ cdp.hover(root, role, name)
 cdp.dblclick(root, role, name)
 cdp.right_click(root, role, name)
 cdp.drag(page, source=("button", "Item A"), target=("region", "Trash"))
+
+cdp.set_window_size(page, width=1280, height=720)   # OS window via CDP
+cdp.set_viewport(page, width=1280, height=720)      # page-rendering viewport only
 ```
 
 `name` accepts a string (exact match by default) or a `re.Pattern` (use regex when the accessible name has trailing whitespace, multi-language strings, or partial matches).

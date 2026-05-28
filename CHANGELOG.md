@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.3.0] — 2026-05-28
+
+### Added
+
+- **`web-view resize --width <W> --height <H>`** — resize the OS Chrome window on a running CDP instance. Uses CDP `Browser.setWindowBounds`. Accepts the standard runtime flags (`--port`, `--tab <index|substring>`, `--quiet`/`-q`) and the resize-specific `--viewport` switch to override only the page viewport (via Playwright `set_viewport_size`) without touching the OS window.
+- **`web-view start --window-size WxH`** — initial window size when launching Chrome. Replaces the previously hardcoded `--window-size=1920,1080` Chrome launch flag with one driven from the kwarg. Default unchanged (`1920x1080`).
+- **Library helpers** in a new `cdp/_window.py` module:
+  - `cdp.set_window_size(page, *, width, height)` — OS-level resize via CDP.
+  - `cdp.set_viewport(page, *, width, height)` — page-level viewport override.
+- `cdp.start_chrome(*, window_size=(1920, 1080), ...)` — new kwarg threaded through to the Chrome launch flag.
+
+## [0.2.0] — 2026-05-28
+
 ### Added
 
 - **`web-view do <verb>`** — element-interaction CLI family. Ten verbs graduate from library to CLI under a single parent: `click`, `fill`, `check`, `press`, `hover`, `dblclick`, `right-click`, `scroll-into-view`, `upload`, `drag`. Element addressing defaults to `--role + --name` (matches the `.aria.yaml` emitted by `web-view snap`); `--selector <css>` is the mutually exclusive escape hatch. Every verb accepts `--port` (auto-resolves like `navigate`/`snap`/`stop`), `--tab <index|substring>` (same semantics as `navigate`), `--timeout <seconds>` (default 15), and `--quiet`/`-q` to silence the success ack. `fill` reads its value from stdin when `--value` is omitted; `press` accepts a comma-separated chord list (`"Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax for `--from`/`--to`. Closes the read-yaml → act loop from `web-view snap` without dropping into a Python REPL. Design recorded in [ADR 0001](docs/adr/0001-cli-interaction.md).
