@@ -140,37 +140,116 @@ For every new feature or bug fix:
 
 Run the full quality gate between phases.
 
-## Workflow for feature / fix work
+## Workflow
 
-1. **Branch off main.** `git checkout main && git pull && git checkout
-   -b <type>/<slug>-<issue-number>`. Prefixes: `feat/`, `fix/`,
-   `chore/`, `design/` (for ADR-only PRs against `needs-design`
-   issues).
-2. **TDD.** Red → green → refactor as above.
-3. **Docs.** Update `CHANGELOG.md` `[Unreleased]` section. Update
-   `README.md` if the public surface (CLI flags, API) changed. Update
-   `docs/adr/` if a design decision merits its own ADR.
-4. **Version bump.** If the work qualifies for a release (see
-   "Tag versioning" below), bump `pyproject.toml` `version` in the same
-   PR. Otherwise leave it.
-5. **PR.** Title: `<type>: <subject>`. Body: summary, what's in the
-   PR, test plan. Use `Closes #N` if the PR fully resolves the issue;
-   `Refs #N` for partial / design-only.
-6. **Merge.** Squash-merge via `gh pr merge <N> --squash
-   --delete-branch`. After merge, sync local main:
-   `git checkout main && git pull`.
-7. **Tag (if qualifying).** See "Tag versioning".
-8. **Upgrade the local installed CLI.** Always run:
-   ```bash
-   uv tool upgrade web-view
-   ```
-   This pulls the new `main` (or tag) and rebuilds the CLI on `PATH`.
-   *This is the standard closure step at the end of every PR that
-   merges to main.* Verify with `web-view -h` showing the expected
-   surface.
-9. **Tick the issue body.** For issues with checkbox-style AC, edit
-   the body to tick the completed items (`gh issue edit <N>` with the
-   updated body). A merged PR with unticked AC is a process violation.
+Two paths depending on issue type. Board cards (project #16) move as the
+work progresses.
+
+### `needs-design` issue (e.g. #4 — `cli-interaction`)
+
+```
+/create-issue --label needs-design
+  ▸ body has candidates / open questions / criteria — NO AC yet
+  ▸ card lands in Design
+
+─── PHASE A — DESIGN ─────────────────────────────────────────
+1. git checkout -b design/<slug>-<N>
+2. write docs/adr/NNNN-<slug>.md
+   (decision + rejected alternatives + Q&A + pre-baked AC list)
+3. PR  →  body "Refs #N"   (NOT "Closes" — only Phase B closes)
+4. gh pr merge <N> --squash --delete-branch
+5. edit issue body: insert AC from ADR above the closure block
+6. swap label: needs-design → enhancement
+7. card: Design → Backlog (now implementable)
+
+(continue at Phase B below)
+```
+
+### Ready-to-implement issue (`bug` / `enhancement` / `polish`)
+
+```
+/create-issue --label <bug|enhancement|polish>
+  ▸ body already has concrete AC
+  ▸ card lands in Backlog
+
+Skip Phase A. Go straight to Phase B below.
+```
+
+### Phase B — Implementation (both paths converge here)
+
+```
+1. git checkout -b feat/<slug>-<N>     (or fix/ , chore/)
+
+2. TDD RED       → write failing tests in tests/test_cli.py
+                   extend tests/conftest.py fake_cdp if needed
+                   verify with: uv run --extra dev pytest tests/ -q
+                   commit: "test: <slug> (failing)"
+
+3. TDD GREEN     → minimum implementation to pass the new tests
+                   verify with full quality gate (see below)
+                   commit: "feat: <slug>"   (or "fix: <slug>")
+
+4. TDD REFACTOR  → only if duplication / clarity loss appeared
+                   tests do not change
+                   commit: "refactor: <slug>"
+                   ⚠ SKIP this commit entirely if no real refactor
+
+5. DOCS          → CHANGELOG.md [Unreleased] entry
+                   README.md if public surface changed
+                   bump pyproject.toml version if release-qualifying
+                   commit: "docs: <slug>"
+
+6. PR  →  body ends with "Closes #N"
+   ▸ card: Backlog → In progress
+
+7. gh pr merge <N> --squash --delete-branch
+   ▸ issue #N auto-closes (via "Closes #N")
+   ▸ card: In progress → Done
+```
+
+### Post-merge ritual (every PR that merges to main)
+
+```
+① uv tool upgrade web-view              ← refresh the local CLI
+  ▸ ALWAYS run this. Verify with: web-view -h
+
+② tag IF qualifying (semver — see "Tag versioning")
+  git tag -a vX.Y.Z -m "..."
+  git push origin vX.Y.Z
+  gh release create vX.Y.Z --title "..." --notes "..."
+
+③ tick AC checkboxes in the (now-closed) issue body
+  gh issue view <N> --json body -q .body > /tmp/issue-<N>.md
+  # mark every `- [ ]` you actually completed as `- [x]`
+  gh issue edit <N> --body-file /tmp/issue-<N>.md
+
+④ smoke-test against a real Chrome instance if public surface changed
+```
+
+### Quality gate (run between TDD phases)
+
+```bash
+uv run --extra dev pytest tests/ -q              # tests stay green
+uv run --extra dev ruff check src/ tests/        # lint clean
+uv run --extra dev ruff format src/ tests/       # formatter clean
+check-all .                                       # dev-quality umbrella
+uv run web-view --help                            # sanity-check root -h
+```
+
+A red gate at the end of a TDD phase means the phase is not done — fix
+the underlying issue, then commit. Never bypass hooks with `--no-verify`.
+
+### Branch / PR / merge conventions
+
+- **Branch naming:** `<type>/<slug>-<issue-number>`. The issue number
+  trails so any branch is greppable by issue. Multi-PR work suffixes
+  `-part1`, `-part2`, etc., and the issue closes only on the final PR.
+- **Branch prefixes:** `feat/`, `fix/`, `chore/`, `design/`.
+- **PR title:** `<type>: <subject>` matching the commit prefix.
+- **PR body keyword:** `Closes #N` for full resolution; `Refs #N` for
+  partial / design-only (Phase A ADR PRs).
+- **Merge mode:** always `gh pr merge <N> --squash --delete-branch`.
+- **After merge:** `git checkout main && git pull` to sync local.
 
 ## Tag versioning
 
