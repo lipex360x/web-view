@@ -3,34 +3,9 @@
 from __future__ import annotations
 
 import argparse
-from typing import Any
 
 from .. import cdp
-from ._shared import print_no_tab_found, resolve_single_port
-
-
-def _parse_tab_index(selector: str) -> int | None:
-    candidate = selector[1:] if selector.startswith("-") else selector
-    if candidate.isdigit():
-        return int(selector)
-    return None
-
-
-def _pick_tab(context: Any, selector: str | None) -> Any:
-    if selector is None:
-        page = cdp.find_page(context, url_contains="")
-        if page is not None:
-            return page
-        return context.pages[0] if context.pages else None
-    index = _parse_tab_index(selector)
-    if index is not None:
-        if not context.pages:
-            return None
-        try:
-            return context.pages[index]
-        except IndexError:
-            return None
-    return cdp.find_page(context, url_contains=selector)
+from ._shared import print_no_tab_found, resolve_single_port, resolve_target_tab
 
 
 def handle(arguments: argparse.Namespace) -> int:
@@ -42,7 +17,7 @@ def handle(arguments: argparse.Namespace) -> int:
             cdp.open_tab(context, arguments.url)
             print(f"opened new tab on port {target_port}: {arguments.url}")
             return 0
-        page = _pick_tab(context, arguments.tab)
+        page = resolve_target_tab(context, arguments.tab)
         if page is None:
             print_no_tab_found(arguments.tab or "")
             return 1
