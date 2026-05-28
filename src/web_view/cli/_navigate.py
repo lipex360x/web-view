@@ -6,7 +6,7 @@ import argparse
 from typing import Any
 
 from .. import cdp
-from ._shared import ensure_instance_on_port, print_no_tab_found
+from ._shared import print_no_tab_found, resolve_single_port
 
 
 def _parse_tab_index(selector: str) -> int | None:
@@ -34,29 +34,34 @@ def _pick_tab(context: Any, selector: str | None) -> Any:
 
 
 def handle(arguments: argparse.Namespace) -> int:
-    if not ensure_instance_on_port(arguments.port):
+    target_port = resolve_single_port(arguments.port)
+    if target_port is None:
         return 1
-    with cdp.connect(port=arguments.port) as (_, context):
+    with cdp.connect(port=target_port) as (_, context):
         if arguments.new_tab:
             cdp.open_tab(context, arguments.url)
-            print(f"opened new tab on port {arguments.port}: {arguments.url}")
+            print(f"opened new tab on port {target_port}: {arguments.url}")
             return 0
         page = _pick_tab(context, arguments.tab)
         if page is None:
             print_no_tab_found(arguments.tab or "")
             return 1
         cdp.goto(page, arguments.url)
-        print(f"navigated tab on port {arguments.port}: {arguments.url}")
+        print(f"navigated tab on port {target_port}: {arguments.url}")
     return 0
 
 
 EPILOG = """\
 Examples:
-  web-view navigate --url https://example.com
+  web-view navigate --url https://example.com               # single instance
+  web-view navigate --url https://x.com --port 9333         # explicit port
   web-view navigate --url https://x.com --tab 0
   web-view navigate --url https://x.com --tab github.com
   web-view navigate --url https://x.com --new-tab
-  web-view navigate --url https://x.com --port 9333
+
+Port selection (same rule as `web-view stop`):
+  `--port` is optional when exactly one CDP Chrome is running. With zero
+  or 2+ running instances, the command exits with the candidate ports.
 
 Tab selection:
   (default)             first non-helper tab
@@ -64,9 +69,7 @@ Tab selection:
   --tab <substring>     by URL substring (first match wins)
   --new-tab             open the URL in a fresh tab
 
-`--tab` and `--new-tab` are mutually exclusive. If no port has a running
-CDP Chrome, the command prints a hint pointing at `web-view start`
-and `web-view list` instead of leaking a Playwright traceback.
+`--tab` and `--new-tab` are mutually exclusive.
 """
 
 
@@ -78,7 +81,12 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--url", required=True, help="URL to load")
-    parser.add_argument("--port", type=int, default=cdp.DEFAULT_CDP_PORT, help="CDP port")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help="CDP port (optional when exactly one CDP Chrome is running)",
+    )
     tab_selection = parser.add_mutually_exclusive_group()
     tab_selection.add_argument(
         "--tab",

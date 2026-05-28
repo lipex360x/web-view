@@ -225,6 +225,86 @@ def test_start_url_flag_navigates_first_tab(
     assert target_url == "file:///foo.html"
 
 
+def test_navigate_without_port_uses_single_running_instance(
+    fake_cdp: dict[str, Any],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9444)]
+    first = make_fake_page(page_url="about:blank", page_title="")
+    fake_cdp["pages"] = [first]
+    exit_code = _run(["navigate", "--url", "https://foo.test"])
+    assert exit_code == 0
+    assert fake_cdp["goto_calls"] == [(first, "https://foo.test")]
+
+
+def test_navigate_without_port_errors_when_zero(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = []
+    exit_code = _run(["navigate", "--url", "https://foo.test"])
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "No CDP Chrome instances running" in captured.err
+    assert fake_cdp["goto_calls"] == []
+
+
+def test_navigate_without_port_errors_when_multiple(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [
+        FakeInstance(pid=111, port=9222),
+        FakeInstance(pid=222, port=9223),
+    ]
+    exit_code = _run(["navigate", "--url", "https://foo.test"])
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "2 CDP Chrome instances running" in captured.err
+    assert "--port 9222" in captured.err
+    assert "--port 9223" in captured.err
+    assert fake_cdp["goto_calls"] == []
+
+
+def test_snap_without_port_uses_single_running_instance(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9444)]
+    fake_cdp["pages"] = [make_fake_page(page_url="file:///index.html", page_title="Home")]
+    exit_code = _run(["snap", "--destination-dir", str(tmp_path)])
+    assert exit_code == 0
+    names = [item.name for item in tmp_path.iterdir()]
+    assert any(name.endswith("-snap.png") for name in names)
+
+
+def test_snap_without_port_errors_when_zero(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["instances"] = []
+    exit_code = _run(["snap", "--destination-dir", str(tmp_path)])
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "No CDP Chrome instances running" in captured.err
+
+
+def test_snap_without_port_errors_when_multiple(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["instances"] = [
+        FakeInstance(pid=111, port=9222),
+        FakeInstance(pid=222, port=9223),
+    ]
+    exit_code = _run(["snap", "--destination-dir", str(tmp_path)])
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "2 CDP Chrome instances running" in captured.err
+    assert "--port 9222" in captured.err
+
+
 def test_navigate_default_uses_first_tab(
     fake_cdp: dict[str, Any],
 ) -> None:

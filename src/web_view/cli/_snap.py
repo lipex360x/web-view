@@ -7,15 +7,16 @@ import sys
 from pathlib import Path
 
 from .. import cdp
-from ._shared import ensure_instance_on_port
+from ._shared import resolve_single_port
 
 
 def handle(arguments: argparse.Namespace) -> int:
-    if not ensure_instance_on_port(arguments.port):
+    target_port = resolve_single_port(arguments.port)
+    if target_port is None:
         return 1
     destination_dir = Path(arguments.destination_dir).expanduser().resolve()
     destination_dir.mkdir(parents=True, exist_ok=True)
-    with cdp.connect(port=arguments.port) as (_, context):
+    with cdp.connect(port=target_port) as (_, context):
         page = cdp.find_page(context, url_contains=arguments.url_contains)
         if page is None:
             print(f"no tab containing {arguments.url_contains!r}", file=sys.stderr)
@@ -28,10 +29,15 @@ def handle(arguments: argparse.Namespace) -> int:
 
 EPILOG = """\
 Examples:
-  web-view snap                              # auto-slug ("snap"), default port
+  web-view snap                              # single instance, auto-slug
   web-view snap homepage                     # explicit slug
   web-view snap login --url-contains login   # pick tab by URL substring
   web-view snap homepage --destination-dir ./captures
+  web-view snap --port 9333                  # explicit port
+
+Port selection (same rule as `web-view stop` / `web-view navigate`):
+  `--port` is optional when exactly one CDP Chrome is running. With zero
+  or 2+ running instances, the command exits with the candidate ports.
 
 Output:
   Files are written as NN-<slug>.png + NN-<slug>.aria.yaml (NN is the
@@ -40,9 +46,6 @@ Output:
   with `head`, `xargs`, etc.:
 
     web-view snap | head -1 | xargs open
-
-If no port has a running CDP Chrome, prints a hint pointing at
-`web-view start` and `web-view list` instead of a raw traceback.
 """
 
 
@@ -59,7 +62,12 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         default="snap",
         help="snapshot name (kebab-case); defaults to 'snap'",
     )
-    parser.add_argument("--port", type=int, default=cdp.DEFAULT_CDP_PORT, help="CDP port")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help="CDP port (optional when exactly one CDP Chrome is running)",
+    )
     parser.add_argument(
         "--url-contains",
         default="",
