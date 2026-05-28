@@ -12,6 +12,6 @@ or
     cdp.click(page, "button", "Submit")
 """
 
-from . import cdp as cdp  # noqa: PLC0414
+from . import cdp
 
 __all__ = ["cdp"]
