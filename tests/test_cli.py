@@ -973,3 +973,259 @@ def test_resize_help_has_examples_epilog(
         _run(["resize", "--help"])
     captured = capsys.readouterr()
     assert "Examples" in captured.out
+
+
+def test_tab_new_default_opens_about_blank(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    exit_code = _run(["tab", "new"])
+    assert exit_code == 0
+    assert len(fake_cdp["open_tab_calls"]) == 1
+    _, opened_url = fake_cdp["open_tab_calls"][0]
+    assert opened_url == "about:blank"
+
+
+def test_tab_new_with_url_opens_that_url(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    exit_code = _run(["tab", "new", "--url", "https://example.com"])
+    assert exit_code == 0
+    _, opened_url = fake_cdp["open_tab_calls"][0]
+    assert opened_url == "https://example.com"
+
+
+def test_tab_new_prints_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    _run(["tab", "new", "--url", "https://example.com"])
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert lines == ["opened: https://example.com"]
+
+
+def test_tab_new_quiet_suppresses_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    _run(["tab", "new", "--quiet"])
+    assert capsys.readouterr().out.strip() == ""
+
+
+def test_tab_new_zero_instances_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = []
+    exit_code = _run(["tab", "new"])
+    assert exit_code != 0
+    assert "No CDP Chrome instances running" in capsys.readouterr().err
+    assert fake_cdp["open_tab_calls"] == []
+
+
+def test_tab_close_by_index_closes_indexed_page(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    target = make_fake_page(page_url="https://third.test", page_title="3rd")
+    fake_cdp["pages"] = [
+        make_fake_page(page_url="https://first.test", page_title="1st"),
+        make_fake_page(page_url="https://second.test", page_title="2nd"),
+        target,
+    ]
+    exit_code = _run(["tab", "close", "--tab", "2"])
+    assert exit_code == 0
+    assert fake_cdp["close_tab_calls"] == [target]
+
+
+def test_tab_close_by_substring_closes_matched_page(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    matched = make_fake_page(page_url="https://github.com/x/y", page_title="GH")
+    fake_cdp["pages"] = [
+        make_fake_page(page_url="https://example.com", page_title="X"),
+        matched,
+    ]
+    exit_code = _run(["tab", "close", "--tab", "github.com"])
+    assert exit_code == 0
+    assert fake_cdp["close_tab_calls"] == [matched]
+
+
+def test_tab_close_requires_tab_flag(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    with pytest.raises(SystemExit):
+        _run(["tab", "close"])
+
+
+def test_tab_close_index_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [
+        make_fake_page(page_url="https://first.test", page_title="1st"),
+        make_fake_page(page_url="https://second.test", page_title="2nd"),
+    ]
+    _run(["tab", "close", "--tab", "1"])
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert lines == ["closed: tab 1"]
+
+
+def test_tab_close_substring_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://github.com/x", page_title="GH")]
+    _run(["tab", "close", "--tab", "github.com"])
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert lines == ['closed: tab "github.com"']
+
+
+def test_tab_close_quiet_suppresses_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://github.com/x", page_title="GH")]
+    _run(["tab", "close", "--tab", "github.com", "--quiet"])
+    assert capsys.readouterr().out.strip() == ""
+
+
+def test_tab_close_unknown_substring_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    exit_code = _run(["tab", "close", "--tab", "github.com"])
+    assert exit_code != 0
+    captured = capsys.readouterr()
+    assert "No tab matched 'github.com'" in captured.err
+    assert fake_cdp["close_tab_calls"] == []
+
+
+def test_tab_close_out_of_range_index_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    exit_code = _run(["tab", "close", "--tab", "5"])
+    assert exit_code != 0
+    assert "No tab matched '5'" in capsys.readouterr().err
+    assert fake_cdp["close_tab_calls"] == []
+
+
+def test_tab_switch_default_focuses_first_tab(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    first = make_fake_page(page_url="https://first.test", page_title="1st")
+    fake_cdp["pages"] = [first, make_fake_page(page_url="https://second.test", page_title="2nd")]
+    exit_code = _run(["tab", "switch"])
+    assert exit_code == 0
+    assert len(fake_cdp["switch_to_tab_calls"]) == 1
+    _, url_contains = fake_cdp["switch_to_tab_calls"][0]
+    assert url_contains == ""
+    assert first.bring_to_front_calls == [True]
+
+
+def test_tab_switch_by_index_brings_indexed_tab_to_front(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    second = make_fake_page(page_url="https://second.test", page_title="2nd")
+    fake_cdp["pages"] = [make_fake_page(page_url="https://first.test", page_title="1st"), second]
+    exit_code = _run(["tab", "switch", "--tab", "1"])
+    assert exit_code == 0
+    assert second.bring_to_front_calls == [True]
+    assert fake_cdp["switch_to_tab_calls"] == []
+
+
+def test_tab_switch_by_substring_focuses_matched_tab(fake_cdp: dict[str, Any]) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    matched = make_fake_page(page_url="https://classmark.test/a", page_title="CM")
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X"), matched]
+    exit_code = _run(["tab", "switch", "--tab", "classmark"])
+    assert exit_code == 0
+    assert matched.bring_to_front_calls == [True]
+    assert len(fake_cdp["switch_to_tab_calls"]) == 1
+    _, url_contains = fake_cdp["switch_to_tab_calls"][0]
+    assert url_contains == "classmark"
+
+
+def test_tab_switch_index_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [
+        make_fake_page(page_url="https://first.test", page_title="1st"),
+        make_fake_page(page_url="https://second.test", page_title="2nd"),
+    ]
+    _run(["tab", "switch", "--tab", "1"])
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    assert lines == ["switched: tab 1"]
+
+
+def test_tab_switch_quiet_suppresses_ack(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://first.test", page_title="1st")]
+    _run(["tab", "switch", "--quiet"])
+    assert capsys.readouterr().out.strip() == ""
+
+
+def test_tab_switch_unknown_substring_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="https://example.com", page_title="X")]
+    exit_code = _run(["tab", "switch", "--tab", "classmark"])
+    assert exit_code != 0
+    assert "No tab matched 'classmark'" in capsys.readouterr().err
+    assert fake_cdp["switch_to_tab_calls"] == []
+
+
+def test_tab_switch_explicit_port_no_instance_structured_error(
+    fake_cdp: dict[str, Any],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake_cdp["instances"] = []
+    exit_code = _run(["tab", "switch", "--port", "9222"])
+    assert exit_code != 0
+    assert "No CDP Chrome instance on port 9222" in capsys.readouterr().err
+
+
+def test_root_help_lists_eight_commands(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["--help"])
+    output = capsys.readouterr().out
+    for command in ("start", "list", "stop", "navigate", "snap", "do", "resize", "tab"):
+        assert command in output
+
+
+def test_tab_help_lists_all_verbs(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["tab", "--help"])
+    output = capsys.readouterr().out
+    for verb in ("new", "close", "switch"):
+        assert verb in output
+
+
+def test_tab_new_help_has_examples_epilog(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["tab", "new", "--help"])
+    assert "Examples" in capsys.readouterr().out
+
+
+def test_tab_close_help_has_examples_epilog(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["tab", "close", "--help"])
+    assert "Examples" in capsys.readouterr().out
+
+
+def test_tab_switch_help_has_examples_epilog(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["tab", "switch", "--help"])
+    assert "Examples" in capsys.readouterr().out
