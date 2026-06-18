@@ -12,7 +12,9 @@ import re
 from pathlib import Path
 from typing import Any
 
-from ._shared import locator_by_role
+from ._shared import locator_by_role, same_origin
+
+CROSS_ORIGIN_NOTE = "- iframe (cross-origin, not captured)"
 
 
 def screenshot(page: Any, destination: Path, *, full_page: bool = True) -> Path:
@@ -22,13 +24,80 @@ def screenshot(page: Any, destination: Path, *, full_page: bool = True) -> Path:
     return destination
 
 
-def aria_snapshot(page: Any, destination: Path | None = None) -> str:
-    """Return Playwright's ARIA snapshot (YAML). Optionally write to `destination`."""
+def aria_snapshot(
+    page: Any,
+    destination: Path | None = None,
+    *,
+    include_frames: bool = True,
+) -> str:
+    """Return Playwright's ARIA snapshot (YAML). Optionally write to `destination`.
+
+    With `include_frames` (default), each `- iframe` leaf is expanded in place:
+    same-origin frames have their own ARIA tree inlined under the node and
+    labelled with the frame URL; cross-origin frames are annotated
+    `- iframe (cross-origin, not captured)` so the omission is visible.
+    """
     text = page.aria_snapshot()
+    if include_frames:
+        text = _inline_child_frames(page, text)
     if destination is not None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(text + "\n", encoding="utf-8")
     return text
+
+
+def _child_frames(root: Any) -> list[Any]:
+    main_frame = getattr(root, "main_frame", None)
+    source = main_frame if main_frame is not None else root
+    return list(getattr(source, "child_frames", []) or [])
+
+
+def _is_iframe_line(line: str) -> bool:
+    stripped = line.strip()
+    return (
+        stripped == "- iframe"
+        or stripped.startswith("- iframe ")
+        or stripped.startswith("- iframe:")
+    )
+
+
+def _leading_spaces(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))
+
+
+def _indent_lines(text: str, spaces: int) -> list[str]:
+    pad = " " * spaces
+    return [f"{pad}{line}" if line.strip() else line for line in text.splitlines()]
+
+
+def _render_iframe(line: str, frame: Any, root_url: str) -> list[str]:
+    pad = " " * _leading_spaces(line)
+    frame_url = getattr(frame, "url", "")
+    if not same_origin(root_url, frame_url):
+        return [f"{pad}{CROSS_ORIGIN_NOTE}"]
+    child_text = aria_snapshot(frame, include_frames=True)
+    header = f'{pad}- iframe "{frame_url}":'
+    nested = _indent_lines(child_text, _leading_spaces(line) + 2)
+    return [header, *nested] if child_text.strip() else [header]
+
+
+def _inline_child_frames(root: Any, text: str) -> str:
+    frames = _child_frames(root)
+    if not frames:
+        return text
+    root_url = getattr(root, "url", "")
+    frame_iterator = iter(frames)
+    output: list[str] = []
+    for line in text.splitlines():
+        if not _is_iframe_line(line):
+            output.append(line)
+            continue
+        frame = next(frame_iterator, None)
+        if frame is None:
+            output.append(line)
+            continue
+        output.extend(_render_iframe(line, frame, root_url))
+    return "\n".join(output)
 
 
 def next_index(destination_dir: Path) -> int:
@@ -48,6 +117,7 @@ def dual_snapshot(
     *,
     dest_dir: Path,
     index: int | None = None,
+    include_frames: bool = True,
 ) -> tuple[Path, Path]:
     """Canonical snapshot: save NN-<slug>.png + NN-<slug>.aria.yaml.
 
@@ -65,7 +135,7 @@ def dual_snapshot(
     png_path = dest_dir / f"{resolved_index:02d}-{safe_slug}.png"
     aria_path = dest_dir / f"{resolved_index:02d}-{safe_slug}.aria.yaml"
     screenshot(page, png_path)
-    aria_snapshot(page, aria_path)
+    aria_snapshot(page, aria_path, include_frames=include_frames)
     return png_path, aria_path
 
 

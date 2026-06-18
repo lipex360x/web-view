@@ -213,6 +213,7 @@ web-view navigate --url URL [--port 9222] [--tab <index|substring> | --new-tab]
 web-view stop     [--port PORT]   # omit --port when exactly one instance is running
 web-view snap     [slug]          # slug defaults to "snap"
                   [--port 9222] [--url-contains STR] [--destination-dir DIR]
+                  [--no-frames]                   # top frame only (skip iframes)
 web-view do       <verb>          # click | fill | check | press | hover | dblclick |
                                   # right-click | scroll-into-view | upload | drag
                   [--role R --name N | --selector CSS]
@@ -230,6 +231,8 @@ web-view tab      <verb>          # new | close | switch
 `web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
 
 `web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, `navigate`, and every `do <verb>`.
+
+By default the ARIA YAML recurses into same-origin iframes: each `- iframe` leaf is expanded in place, with the child frame's accessibility tree inlined under the node and labelled with the frame URL. This makes content rendered inside an iframe (SCORM / HTML5 courses, embedded players) visible to the structured snapshot instead of stopping at a bare `- iframe`. Cross-origin frames are annotated `- iframe (cross-origin, not captured)` so the omission is explicit rather than silent. Pass `--no-frames` for the legacy top-frame-only output.
 
 `web-view do <verb>` is the no-Python convenience layer over the library's interaction helpers. Element addressing defaults to `--role + --name` (the same vocabulary `web-view snap` writes into the ARIA YAML); `--selector <css>` is the mutually exclusive escape hatch for CSS-first workflows. Per-verb specifics: `fill` reads stdin when `--value` is omitted (`web-view do fill --role textbox --name Body < message.txt`); `press` accepts a comma-separated chord list (`--keys "Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax (`--from "button:Item" --to "region:Trash"`); `upload` requires `--file <path>`. Every verb prints a one-line success ack on stdout (silenced with `--quiet`).
 
@@ -350,6 +353,8 @@ png_path, aria_path = cdp.dual_snapshot(page, "checkout", dest_dir=Path("./captu
 
 cdp.screenshot(page, Path("./captures/full.png"), full_page=True)
 yaml_text = cdp.aria_snapshot(page, destination=Path("./captures/page.aria.yaml"))
+# same-origin iframes are inlined by default; pass include_frames=False to opt out
+top_only = cdp.aria_snapshot(page, include_frames=False)
 
 html = cdp.get_html(page)                                       # full document
 html = cdp.get_html(page, locator=page.get_by_role("main"))     # one element

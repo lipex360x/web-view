@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- **`web-view snap` recurses into same-origin iframes** (and `cdp.aria_snapshot(page, include_frames=True)`). The ARIA YAML now expands each `- iframe` leaf in place: same-origin frames have their accessibility tree inlined under the node and labelled with the frame URL, so content rendered inside an iframe (SCORM / HTML5 courses, embedded players) becomes visible to the structured snapshot instead of stopping at a bare `- iframe`. Cross-origin frames are annotated `- iframe (cross-origin, not captured)` rather than dropped silently, and never raise. `web-view snap --no-frames` (library: `include_frames=False`) reproduces the previous top-frame-only output. `cdp.dual_snapshot` threads `include_frames` through. Part 1 of #11.
 
 ## [0.5.0] — 2026-06-18
 

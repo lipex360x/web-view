@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from web_view import cdp
 from web_view.cli import main
 
 from .conftest import FakeInstance, make_fake_page
@@ -59,6 +60,104 @@ def test_snap_prints_absolute_paths_to_stdout(
     assert aria_line.endswith(".aria.yaml")
     assert Path(png_line).is_absolute()
     assert Path(aria_line).is_absolute()
+
+
+def test_aria_snapshot_inlines_same_origin_frame_children() -> None:
+    inner = make_fake_page(
+        page_url="file:///course/index_lms.html",
+        aria_text='- button "Next (Ctrl+Alt+Period)"',
+    )
+    outer = make_fake_page(
+        page_url="file:///course/index.html",
+        aria_text="- banner\n- iframe\n- contentinfo",
+        child_frames=[inner],
+    )
+    text = cdp.aria_snapshot(outer)
+    assert '- iframe "file:///course/index_lms.html":' in text
+    assert '  - button "Next (Ctrl+Alt+Period)"' in text
+    assert "- banner" in text
+    assert "- contentinfo" in text
+
+
+def test_aria_snapshot_annotates_cross_origin_frame() -> None:
+    inner = make_fake_page(
+        page_url="https://other.example/widget.html",
+        aria_text='- button "Buy"',
+    )
+    outer = make_fake_page(
+        page_url="file:///course/index.html",
+        aria_text="- iframe",
+        child_frames=[inner],
+    )
+    text = cdp.aria_snapshot(outer)
+    assert "- iframe (cross-origin, not captured)" in text
+    assert "Buy" not in text
+
+
+def test_aria_snapshot_no_frames_returns_top_only() -> None:
+    inner = make_fake_page(
+        page_url="file:///course/index_lms.html",
+        aria_text='- button "Next"',
+    )
+    outer = make_fake_page(
+        page_url="file:///course/index.html",
+        aria_text="- iframe",
+        child_frames=[inner],
+    )
+    text = cdp.aria_snapshot(outer, include_frames=False)
+    assert text == "- iframe"
+    assert "Next" not in text
+
+
+def test_aria_snapshot_recurses_into_nested_frames() -> None:
+    deepest = make_fake_page(
+        page_url="file:///a/quiz.html",
+        aria_text='- radio "Option B"',
+    )
+    middle = make_fake_page(
+        page_url="file:///a/player.html",
+        aria_text="- iframe",
+        child_frames=[deepest],
+    )
+    outer = make_fake_page(
+        page_url="file:///a/index.html",
+        aria_text="- iframe",
+        child_frames=[middle],
+    )
+    text = cdp.aria_snapshot(outer)
+    assert '- iframe "file:///a/player.html":' in text
+    assert '    - radio "Option B"' in text
+
+
+def test_snap_no_frames_passes_include_frames_false(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="file:///index.html", page_title="Home")]
+    exit_code = _run(["snap", "--no-frames", "--port", "9222", "--destination-dir", str(tmp_path)])
+    assert exit_code == 0
+    assert fake_cdp["dual_snapshot_calls"][0]["include_frames"] is False
+
+
+def test_snap_default_passes_include_frames_true(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    fake_cdp["pages"] = [make_fake_page(page_url="file:///index.html", page_title="Home")]
+    exit_code = _run(["snap", "--port", "9222", "--destination-dir", str(tmp_path)])
+    assert exit_code == 0
+    assert fake_cdp["dual_snapshot_calls"][0]["include_frames"] is True
+
+
+def test_snap_help_documents_no_frames(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit):
+        _run(["snap", "--help"])
+    output = capsys.readouterr().out
+    assert "--no-frames" in output
 
 
 def test_stop_without_port_stops_single_instance(

@@ -21,7 +21,12 @@ def handle(arguments: argparse.Namespace) -> int:
         if page is None:
             print(f"no tab containing {arguments.url_contains!r}", file=sys.stderr)
             return 1
-        png_path, aria_path = cdp.dual_snapshot(page, arguments.slug, dest_dir=destination_dir)
+        png_path, aria_path = cdp.dual_snapshot(
+            page,
+            arguments.slug,
+            dest_dir=destination_dir,
+            include_frames=arguments.include_frames,
+        )
     print(str(png_path.resolve()))
     print(str(aria_path.resolve()))
     return 0
@@ -33,7 +38,14 @@ Examples:
   web-view snap homepage                     # explicit slug
   web-view snap login --url-contains login   # pick tab by URL substring
   web-view snap homepage --destination-dir ./captures
+  web-view snap --no-frames                  # top frame only (skip iframes)
   web-view snap --port 9333                  # explicit port
+
+Iframe recursion:
+  By default the ARIA YAML inlines the tree of every same-origin child
+  frame under its `- iframe` node, labelled with the frame URL. Cross-origin
+  frames are annotated `- iframe (cross-origin, not captured)`. Pass
+  `--no-frames` for the legacy top-frame-only snapshot.
 
 Port selection (same rule as `web-view stop` / `web-view navigate`):
   `--port` is optional when exactly one CDP Chrome is running. With zero
@@ -78,4 +90,10 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         default="./captures",
         help="where to save NN-<slug>.png + NN-<slug>.aria.yaml",
     )
-    parser.set_defaults(func=handle)
+    parser.add_argument(
+        "--no-frames",
+        dest="include_frames",
+        action="store_false",
+        help="capture the top frame only (do not recurse into same-origin iframes)",
+    )
+    parser.set_defaults(func=handle, include_frames=True)
