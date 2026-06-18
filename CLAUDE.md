@@ -93,9 +93,16 @@ leading underscore is internal.
 
 ## Coding rules (from `lipex360x/dev-quality`)
 
-The pre-commit hook runs `check-all` from
+**Before writing any code in this project, invoke the `/dev-quality`
+skill and work in that standard.** It is the canonical, always-current
+source for the rules below (abbreviation denylist, no-comments,
+file/function size, line length, TDD). The summary inlined here is a
+convenience snapshot; when the two disagree, the skill wins. Write to the
+standard on the first pass instead of refactoring after a red gate.
+
+The pre-commit hook enforces the same rules by running `check-all` from
 [`lipex360x/dev-quality`](https://github.com/lipex360x/dev-quality)
-`v0.15.3`. The rules:
+`v0.15.3`, so code that ignores the standard fails the commit. The rules:
 
 - **No abbreviations in identifiers.** Denylist includes `cmd`, `ctx`,
   `dest`, `src`, `idx`, `info`, `exc`, `url`, `var`, `cfg`, and ~70
