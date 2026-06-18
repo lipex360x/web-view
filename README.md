@@ -217,7 +217,8 @@ web-view snap     [slug]          # slug defaults to "snap"
 web-view do       <verb>          # click | fill | check | press | hover | dblclick |
                                   # right-click | scroll-into-view | upload | drag
                   [--role R --name N | --selector CSS]
-                  [--port P] [--tab T] [--timeout S] [--quiet]
+                  [--port P] [--tab T] [--frame F] [--timeout S] [--quiet]
+                                  # --frame: index | URL substring | auto (default)
 web-view resize   --width W --height H              # OS window (default)
                   [--viewport]                      # page viewport only
                   [--port P] [--tab T] [--quiet]
@@ -235,6 +236,8 @@ web-view tab      <verb>          # new | close | switch
 By default the ARIA YAML recurses into same-origin iframes: each `- iframe` leaf is expanded in place, with the child frame's accessibility tree inlined under the node and labelled with the frame URL. This makes content rendered inside an iframe (SCORM / HTML5 courses, embedded players) visible to the structured snapshot instead of stopping at a bare `- iframe`. Cross-origin frames are annotated `- iframe (cross-origin, not captured)` so the omission is explicit rather than silent. Pass `--no-frames` for the legacy top-frame-only output.
 
 `web-view do <verb>` is the no-Python convenience layer over the library's interaction helpers. Element addressing defaults to `--role + --name` (the same vocabulary `web-view snap` writes into the ARIA YAML); `--selector <css>` is the mutually exclusive escape hatch for CSS-first workflows. Per-verb specifics: `fill` reads stdin when `--value` is omitted (`web-view do fill --role textbox --name Body < message.txt`); `press` accepts a comma-separated chord list (`--keys "Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax (`--from "button:Item" --to "region:Trash"`); `upload` requires `--file <path>`. Every verb prints a one-line success ack on stdout (silenced with `--quiet`).
+
+To act on an element inside an iframe (SCORM / HTML5 courses, embedded players), every verb except `press` accepts `--frame`. Its grammar mirrors `--tab`: a 0-based index (`--frame 1`, where `0` is the top frame), a URL substring (`--frame index_lms`), or `auto` (the default). `auto` searches the top frame and every same-origin frame and acts on the first one that holds the target element, so `web-view do click --role button --name "ENTER"` finds an in-frame button without you naming its frame. The search uses a non-waiting presence check, so it never multiplies `--timeout` across frames. `press` is excluded on purpose: keyboard input targets whatever has focus, not a frame.
 
 `web-view resize` resizes a running Chrome window. Default mode targets the OS-level window (Chrome physically grows or shrinks on the desktop) via CDP `Browser.setWindowBounds`. `--viewport` switches to a page-only viewport override — useful for responsive-layout testing without disturbing the window manager. The initial size is controlled by `web-view start --window-size WxH` (default `1920x1080`).
 
