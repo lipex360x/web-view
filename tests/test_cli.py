@@ -1229,3 +1229,14 @@ def test_tab_switch_help_has_examples_epilog(capsys: pytest.CaptureFixture[str])
     with pytest.raises(SystemExit):
         _run(["tab", "switch", "--help"])
     assert "Examples" in capsys.readouterr().out
+
+
+def test_version_flag_reports_installed_version(capsys: pytest.CaptureFixture[str]) -> None:
+    from importlib import metadata
+
+    expected = f"web-view {metadata.version('web-view')}"
+    for flag in ("--version", "-v"):
+        with pytest.raises(SystemExit) as exit_information:
+            _run([flag])
+        assert exit_information.value.code == 0
+        assert capsys.readouterr().out.strip() == expected

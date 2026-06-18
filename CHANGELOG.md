@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- **`web-view --version` / `-v`** — print the installed version and exit. Resolves the version from the installed package metadata (`importlib.metadata`), so it always matches the distribution actually on `PATH` rather than a hardcoded string.
 
 ## [0.4.0] — 2026-06-18
 

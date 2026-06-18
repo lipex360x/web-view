@@ -10,10 +10,19 @@ from __future__ import annotations
 
 import argparse
 import sys
+from importlib import metadata
 
 from . import _do, _list, _navigate, _resize, _snap, _start, _stop, _tab
 
 DESCRIPTION = "Drive Chrome over CDP. Run 'web-view <command> -h' for details."
+
+
+def _resolve_version() -> str:
+    try:
+        return metadata.version("web-view")
+    except metadata.PackageNotFoundError:
+        return "unknown"
+
 
 EPILOG = """\
 Library mode (programmatic use):
@@ -30,6 +39,13 @@ def _build_parser() -> argparse.ArgumentParser:
         description=DESCRIPTION,
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"web-view {_resolve_version()}",
+        help="print the installed web-view version and exit",
     )
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="<command>")
     _start.register(subparsers)

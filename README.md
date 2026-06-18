@@ -205,6 +205,7 @@ web-view stop --port 9222
 ## CLI reference
 
 ```
+web-view --version | -v           # print the installed version and exit
 web-view start    [--port 9222] [--user-data-dir DIR] [--headless] [--url URL]
                   [--window-size WxH]              # default 1920x1080
 web-view list
