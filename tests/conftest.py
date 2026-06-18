@@ -53,7 +53,13 @@ class FakeLocator:
         self.actions.append(("drag_to", {"target": target, **arguments}))
 
 
-def make_fake_page(*, page_url: str = "", page_title: str = "") -> SimpleNamespace:
+def make_fake_page(
+    *,
+    page_url: str = "",
+    page_title: str = "",
+    aria_text: str = "",
+    child_frames: list[SimpleNamespace] | None = None,
+) -> SimpleNamespace:
     locator_calls: list[FakeLocator] = []
     keyboard_keys: list[str] = []
     bring_to_front_calls: list[bool] = []
@@ -78,6 +84,8 @@ def make_fake_page(*, page_url: str = "", page_title: str = "") -> SimpleNamespa
         keyboard_keys=keyboard_keys,
         bring_to_front=bring_to_front,
         bring_to_front_calls=bring_to_front_calls,
+        aria_snapshot=lambda: aria_text,
+        child_frames=child_frames or [],
     )
 
 
@@ -142,6 +150,7 @@ def _make_find_page() -> Any:
 
 def _make_dual_snapshot(state: dict[str, Any]) -> Any:
     def fake_dual_snapshot(page: SimpleNamespace, slug: str, **kwargs: Any) -> tuple[Path, Path]:
+        state["dual_snapshot_calls"].append(kwargs)
         destination_dir = kwargs["dest_dir"]
         index = len(state["snapshots"]) + 1
         prefix = f"{index:02d}-{slug}"
@@ -240,6 +249,7 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "close_tab_calls": [],
         "switch_to_tab_calls": [],
         "snapshots": [],
+        "dual_snapshot_calls": [],
         "connect_raises": None,
         "ready": True,
     }
