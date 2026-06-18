@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -152,3 +153,72 @@ def test_root_help_lists_eval_and_download(capsys: pytest.CaptureFixture[str]) -
     output = capsys.readouterr().out
     assert "eval" in output
     assert "download" in output
+
+
+def test_eval_js_file_reads_expression(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _seed_single(fake_cdp)
+    fake_cdp["evaluate_result"] = ["clip.mp4"]
+    script = tmp_path / "find-media.js"
+    script.write_text("[...document.querySelectorAll('video')].map(v => v.src)")
+    exit_code = _run(["eval", "--js-file", str(script)])
+    assert exit_code == 0
+    assert (
+        fake_cdp["evaluate_calls"][0]["expression"]
+        == "[...document.querySelectorAll('video')].map(v => v.src)"
+    )
+    assert capsys.readouterr().out.strip() == json.dumps(["clip.mp4"])
+
+
+def test_eval_js_stdin_reads_expression(
+    fake_cdp: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed_single(fake_cdp)
+    fake_cdp["evaluate_result"] = "Home"
+    monkeypatch.setattr("sys.stdin", io.StringIO("document.title"))
+    exit_code = _run(["eval", "--js", "-"])
+    assert exit_code == 0
+    assert fake_cdp["evaluate_calls"][0]["expression"] == "document.title"
+
+
+def test_eval_js_and_js_file_are_mutually_exclusive(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+) -> None:
+    script = tmp_path / "x.js"
+    script.write_text("1+1")
+    with pytest.raises(SystemExit) as exit_information:
+        _run(["eval", "--js", "1+1", "--js-file", str(script)])
+    assert exit_information.value.code != 0
+    assert fake_cdp["evaluate_calls"] == []
+
+
+def test_eval_requires_a_js_source(fake_cdp: dict[str, Any]) -> None:
+    with pytest.raises(SystemExit) as exit_information:
+        _run(["eval"])
+    assert exit_information.value.code != 0
+    assert fake_cdp["evaluate_calls"] == []
+
+
+def test_eval_js_file_missing_path_errors(
+    fake_cdp: dict[str, Any],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _seed_single(fake_cdp)
+    exit_code = _run(["eval", "--js-file", str(tmp_path / "nope.js")])
+    assert exit_code == 1
+    assert capsys.readouterr().err.strip() != ""
+    assert fake_cdp["evaluate_calls"] == []
+
+
+def test_eval_help_documents_js_file_and_stdin(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit):
+        _run(["eval", "--help"])
+    output = capsys.readouterr().out
+    assert "--js-file" in output
+    assert "--js -" in output
