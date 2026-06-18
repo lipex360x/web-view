@@ -29,6 +29,9 @@ EPILOG = """\
 Examples:
   web-view do hover --role button --name "Tooltip target"
   web-view do hover --selector ".dropdown-trigger"
+  web-view do hover --role button --name "Tip" --frame 1
+
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 

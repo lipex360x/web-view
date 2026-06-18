@@ -31,8 +31,10 @@ Examples:
   web-view do click --selector "[data-testid=submit]"
   web-view do click --role link --name "Open" --tab github.com
   web-view do click --role button --name "Go" --timeout 30 --quiet
+  web-view do click --role button --name "ENTER" --frame index_lms
 
 Addressing: pass `--role + --name` OR `--selector` (not both).
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 Port / tab selection follows `web-view navigate` semantics.
 """
 

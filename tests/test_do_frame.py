@@ -39,9 +39,7 @@ def test_do_click_frame_by_index_targets_that_frame(fake_cdp: dict[str, Any]) ->
 
 def test_do_click_frame_by_url_substring_targets_that_frame(fake_cdp: dict[str, Any]) -> None:
     _outer, inner = _seed_frames(fake_cdp)
-    exit_code = _run(
-        ["do", "click", "--role", "button", "--name", "ENTER", "--frame", "index_lms"]
-    )
+    exit_code = _run(["do", "click", "--role", "button", "--name", "ENTER", "--frame", "index_lms"])
     assert exit_code == 0
     assert fake_cdp["click_calls"][0]["positional"][0] is inner
 
@@ -79,9 +77,7 @@ def test_do_click_frame_substring_no_match_errors(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     _seed_frames(fake_cdp)
-    exit_code = _run(
-        ["do", "click", "--role", "button", "--name", "ENTER", "--frame", "nope"]
-    )
+    exit_code = _run(["do", "click", "--role", "button", "--name", "ENTER", "--frame", "nope"])
     assert exit_code == 1
     assert fake_cdp["click_calls"] == []
     assert "nope" in capsys.readouterr().err

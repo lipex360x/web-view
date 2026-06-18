@@ -8,7 +8,13 @@ from collections.abc import Callable
 from typing import Any
 
 from ... import cdp
-from .._shared import print_no_tab_found, resolve_single_port, resolve_target_tab
+from .._shared import (
+    print_no_frame_found,
+    print_no_tab_found,
+    resolve_single_port,
+    resolve_target_frame,
+    resolve_target_tab,
+)
 
 DEFAULT_TIMEOUT_SECONDS = 15.0
 
@@ -25,6 +31,11 @@ def add_runtime_arguments(parser: argparse.ArgumentParser) -> None:
         "--tab",
         default=None,
         help="target tab: index (0-based, negatives allowed) or URL substring",
+    )
+    parser.add_argument(
+        "--frame",
+        default="auto",
+        help="target frame: index (0 is the top frame), URL substring, or 'auto' (default)",
     )
     parser.add_argument(
         "--timeout",
@@ -87,6 +98,23 @@ def print_ack(verb: str, addressing: tuple[str, str] | str, *, quiet: bool) -> N
 PerformAction = Callable[[Any, tuple[str, str] | str, argparse.Namespace], None]
 
 
+def addressing_probe(addressing: tuple[str, str] | str) -> Callable[[Any], bool]:
+    """Build the cheap, non-waiting presence check used by `--frame auto`.
+
+    Returns a predicate that counts matches of `addressing` on a candidate
+    root via Playwright's `.count()` (which never waits), so resolving the
+    winning frame does not multiply `--timeout` across frames.
+    """
+
+    def probe(root: Any) -> bool:
+        if isinstance(addressing, tuple):
+            role, name = addressing
+            return root.get_by_role(role, name=name, exact=True).count() > 0
+        return root.locator(addressing).count() > 0
+
+    return probe
+
+
 def run_addressed_verb(
     arguments: argparse.Namespace,
     *,
@@ -95,9 +123,9 @@ def run_addressed_verb(
 ) -> int:
     """Boilerplate for every addressed interaction verb.
 
-    Resolves addressing → port → tab → action → ack. Verb-specific work
-    (translating addressing into a `cdp.*` call or a raw locator action)
-    lives in `perform_action`.
+    Resolves addressing → port → tab → frame → action → ack. Verb-specific
+    work (translating addressing into a `cdp.*` call or a raw locator action)
+    lives in `perform_action`, which receives the resolved frame as its root.
     """
     addressing = resolve_addressing(arguments)
     if addressing is None:
@@ -110,6 +138,10 @@ def run_addressed_verb(
         if page is None:
             print_no_tab_found(arguments.tab or "")
             return 1
-        perform_action(page, addressing, arguments)
+        root = resolve_target_frame(page, arguments.frame, probe=addressing_probe(addressing))
+        if root is None:
+            print_no_frame_found(arguments.frame)
+            return 1
+        perform_action(root, addressing, arguments)
         print_ack(verb, addressing, quiet=arguments.quiet)
     return 0
