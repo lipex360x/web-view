@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- **`web-view tab new/close/switch`** — tab-lifecycle CLI family under a single `tab` parent. Three verbs graduate from library to CLI: `new` opens a tab (loads `about:blank` by default, or `--url <URL>`); `close --tab <index|substring>` closes a tab (`--tab` is required because closing is destructive, so there is no implicit default); `switch [--tab <index|substring>]` brings a tab to the front (defaults to the first non-helper tab). Every verb accepts `--port` (auto-resolves like `navigate`/`snap`/`stop`) and `--quiet`/`-q`. Tab selection mirrors `navigate` (`--tab` is a 0-based index, negatives allowed, or a URL substring). A thin pass-through over the existing `cdp.open_tab` / `cdp.close_tab` / `cdp.switch_to_tab` helpers. Lands the root command list at 8 (`start | list | stop | navigate | snap | do | resize | tab`), the cap codified in [ADR 0001](docs/adr/0001-cli-interaction.md). The pre-existing `web-view navigate --new-tab` keeps working; `web-view tab new` is the preferred form for new code.
 
 ## [0.3.0] — 2026-05-28
 

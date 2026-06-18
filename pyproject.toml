@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "web-view"
-version = "0.3.0"
+version = "0.4.0"
 description = "Project-agnostic toolkit for driving Chrome via the Chrome DevTools Protocol (CDP) on top of Playwright. Wait-on-state, never on time."
 readme = "README.md"
 requires-python = ">=3.11"

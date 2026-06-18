@@ -166,7 +166,17 @@ web-view snap after-login                                 # captures the new sta
 
 Every interaction verb (`click`, `fill`, `check`, `press`, `hover`, `dblclick`, `right-click`, `scroll-into-view`, `upload`, `drag`) accepts the same options: `--port`/`--tab` for instance + tab targeting, `--timeout` for the upper bound on element waits, `--quiet`/`-q` to silence the one-line success ack. CSS-first workflows use `--selector <css>` instead of `--role/--name`. See `web-view do -h` for the verb list and `web-view do <verb> -h` for per-command details.
 
-### 5. Drive it from Python
+### 5. Open, snapshot, and close tabs
+
+```bash
+web-view tab new --url https://example.com   # opens a fresh tab on the URL
+web-view snap example --url-contains example.com
+web-view tab close --tab example.com         # close it again when done
+```
+
+`tab close` requires `--tab` on purpose (closing is destructive). `tab switch [--tab <index|substring>]` brings a background tab to the front; with no `--tab` it focuses the first non-helper tab.
+
+### 6. Drive it from Python
 
 ```python
 from web_view import cdp
@@ -182,7 +192,7 @@ with cdp.connect(port=9222) as (browser, context):
     cdp.dual_snapshot(page, "search-results", dest_dir="./captures")
 ```
 
-### 6. Stop the Chrome you started
+### 7. Stop the Chrome you started
 
 ```bash
 web-view stop --port 9222
@@ -209,6 +219,11 @@ web-view do       <verb>          # click | fill | check | press | hover | dblcl
 web-view resize   --width W --height H              # OS window (default)
                   [--viewport]                      # page viewport only
                   [--port P] [--tab T] [--quiet]
+web-view tab      <verb>          # new | close | switch
+                  new    [--url URL]               # opens about:blank by default
+                  close  --tab <index|substring>   # --tab required (destructive)
+                  switch [--tab <index|substring>] # defaults to first non-helper tab
+                  [--port P] [--quiet]
 ```
 
 `web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
@@ -218,6 +233,8 @@ web-view resize   --width W --height H              # OS window (default)
 `web-view do <verb>` is the no-Python convenience layer over the library's interaction helpers. Element addressing defaults to `--role + --name` (the same vocabulary `web-view snap` writes into the ARIA YAML); `--selector <css>` is the mutually exclusive escape hatch for CSS-first workflows. Per-verb specifics: `fill` reads stdin when `--value` is omitted (`web-view do fill --role textbox --name Body < message.txt`); `press` accepts a comma-separated chord list (`--keys "Control+a,Backspace"`); `drag` uses a `role:name` micro-syntax (`--from "button:Item" --to "region:Trash"`); `upload` requires `--file <path>`. Every verb prints a one-line success ack on stdout (silenced with `--quiet`).
 
 `web-view resize` resizes a running Chrome window. Default mode targets the OS-level window (Chrome physically grows or shrinks on the desktop) via CDP `Browser.setWindowBounds`. `--viewport` switches to a page-only viewport override — useful for responsive-layout testing without disturbing the window manager. The initial size is controlled by `web-view start --window-size WxH` (default `1920x1080`).
+
+`web-view tab <verb>` manages the tab lifecycle as a thin pass-through to the library's `cdp.open_tab` / `cdp.close_tab` / `cdp.switch_to_tab` helpers. `tab new` opens a fresh tab (`about:blank` unless `--url` is given) and is the preferred form for new code over `navigate --new-tab` (which keeps working). `tab close` requires `--tab` on purpose: closing is destructive, so there is no implicit "first tab" default that could discard a logged-in session by accident. `tab switch` is non-destructive and therefore defaults to the first non-helper tab when `--tab` is omitted. Tab selection mirrors `navigate`: a 0-based index (negatives count from the end) or a URL substring.
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 
