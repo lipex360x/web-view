@@ -21,9 +21,13 @@ class FakeInstance:
 
 
 class FakeLocator:
-    def __init__(self, selector: str) -> None:
+    def __init__(self, selector: str, *, match_count: int = 0) -> None:
         self.selector = selector
+        self.match_count = match_count
         self.actions: list[tuple[str, Any]] = []
+
+    def count(self) -> int:
+        return self.match_count
 
     def click(self, **arguments: Any) -> None:
         self.actions.append(("click", arguments))
@@ -59,15 +63,25 @@ def make_fake_page(
     page_title: str = "",
     aria_text: str = "",
     child_frames: list[SimpleNamespace] | None = None,
+    frames: list[SimpleNamespace] | None = None,
+    present_roles: list[tuple[str, str]] | None = None,
+    present_selectors: list[str] | None = None,
 ) -> SimpleNamespace:
     locator_calls: list[FakeLocator] = []
     keyboard_keys: list[str] = []
     bring_to_front_calls: list[bool] = []
+    role_present = present_roles or []
+    selector_present = present_selectors or []
 
     def locator(selector: str) -> FakeLocator:
-        locator_instance = FakeLocator(selector)
+        match_count = 1 if selector in selector_present else 0
+        locator_instance = FakeLocator(selector, match_count=match_count)
         locator_calls.append(locator_instance)
         return locator_instance
+
+    def get_by_role(role: str, name: Any = None, exact: bool = True) -> FakeLocator:
+        match_count = 1 if (role, name) in role_present else 0
+        return FakeLocator(f"role={role}", match_count=match_count)
 
     def press_key(key: str) -> None:
         keyboard_keys.append(key)
@@ -80,12 +94,14 @@ def make_fake_page(
         title=lambda: page_title,
         locator=locator,
         locator_calls=locator_calls,
+        get_by_role=get_by_role,
         keyboard=SimpleNamespace(press=press_key),
         keyboard_keys=keyboard_keys,
         bring_to_front=bring_to_front,
         bring_to_front_calls=bring_to_front_calls,
         aria_snapshot=lambda: aria_text,
         child_frames=child_frames or [],
+        frames=frames if frames is not None else [],
     )
 
 
