@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import _do, _list, _navigate, _resize, _snap, _start, _stop
+from . import _do, _list, _navigate, _resize, _snap, _start, _stop, _tab
 
 DESCRIPTION = "Drive Chrome over CDP. Run 'web-view <command> -h' for details."
 
@@ -39,6 +39,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _snap.register(subparsers)
     _do.register(subparsers)
     _resize.register(subparsers)
+    _tab.register(subparsers)
     return parser
 
 
