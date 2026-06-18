@@ -56,6 +56,7 @@ class FakeLocator:
 def make_fake_page(*, page_url: str = "", page_title: str = "") -> SimpleNamespace:
     locator_calls: list[FakeLocator] = []
     keyboard_keys: list[str] = []
+    bring_to_front_calls: list[bool] = []
 
     def locator(selector: str) -> FakeLocator:
         locator_instance = FakeLocator(selector)
@@ -65,6 +66,9 @@ def make_fake_page(*, page_url: str = "", page_title: str = "") -> SimpleNamespa
     def press_key(key: str) -> None:
         keyboard_keys.append(key)
 
+    def bring_to_front() -> None:
+        bring_to_front_calls.append(True)
+
     return SimpleNamespace(
         url=page_url,
         title=lambda: page_title,
@@ -72,6 +76,8 @@ def make_fake_page(*, page_url: str = "", page_title: str = "") -> SimpleNamespa
         locator_calls=locator_calls,
         keyboard=SimpleNamespace(press=press_key),
         keyboard_keys=keyboard_keys,
+        bring_to_front=bring_to_front,
+        bring_to_front_calls=bring_to_front_calls,
     )
 
 
@@ -180,6 +186,25 @@ def _make_open_tab(state: dict[str, Any]) -> Any:
     return fake_open_tab
 
 
+def _make_close_tab(state: dict[str, Any]) -> Any:
+    def fake_close_tab(page: SimpleNamespace) -> None:
+        state["close_tab_calls"].append(page)
+
+    return fake_close_tab
+
+
+def _make_switch_to_tab(state: dict[str, Any]) -> Any:
+    def fake_switch_to_tab(context: FakeContext, *, url_contains: str) -> SimpleNamespace:
+        for page in context.pages:
+            if url_contains in page.url:
+                page.bring_to_front()
+                state["switch_to_tab_calls"].append((context, url_contains))
+                return page
+        raise RuntimeError(f"no tab found with url containing {url_contains!r}")
+
+    return fake_switch_to_tab
+
+
 def _make_interaction_recorder(state: dict[str, Any], verb: str) -> Any:
     def fake_recorder(*positional: Any, **keyword: Any) -> None:
         state[f"{verb}_calls"].append({"positional": positional, "keyword": keyword})
@@ -212,6 +237,8 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "started": None,
         "goto_calls": [],
         "open_tab_calls": [],
+        "close_tab_calls": [],
+        "switch_to_tab_calls": [],
         "snapshots": [],
         "connect_raises": None,
         "ready": True,
@@ -230,6 +257,8 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(cdp_module, "is_cdp_ready", _make_is_cdp_ready(state))
     monkeypatch.setattr(cdp_module, "goto", _make_goto(state))
     monkeypatch.setattr(cdp_module, "open_tab", _make_open_tab(state))
+    monkeypatch.setattr(cdp_module, "close_tab", _make_close_tab(state))
+    monkeypatch.setattr(cdp_module, "switch_to_tab", _make_switch_to_tab(state))
     for verb in _INTERACTION_VERBS:
         monkeypatch.setattr(cdp_module, verb, _make_interaction_recorder(state, verb))
     for verb in _WINDOW_VERBS:
