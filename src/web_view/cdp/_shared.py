@@ -17,8 +17,25 @@ from __future__ import annotations
 import http.client
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 STORAGE_KINDS: tuple[str, str] = ("local", "session")
+
+
+def same_origin(first_url: str, second_url: str) -> bool:
+    """Return True when both URLs share scheme + host + port (the web origin).
+
+    Local `file://` URLs have no host or port, so any two of them compare
+    equal — which is the behaviour the snapshot recursion wants for a course
+    served from disk.
+    """
+    first = urlsplit(first_url)
+    second = urlsplit(second_url)
+    return (first.scheme, first.hostname, first.port) == (
+        second.scheme,
+        second.hostname,
+        second.port,
+    )
 
 
 def poll_localhost_json(port: int, *, request_timeout_s: float = 1.0) -> bool:

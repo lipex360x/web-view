@@ -135,9 +135,7 @@ def test_snap_no_frames_passes_include_frames_false(
 ) -> None:
     fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
     fake_cdp["pages"] = [make_fake_page(page_url="file:///index.html", page_title="Home")]
-    exit_code = _run(
-        ["snap", "--no-frames", "--port", "9222", "--destination-dir", str(tmp_path)]
-    )
+    exit_code = _run(["snap", "--no-frames", "--port", "9222", "--destination-dir", str(tmp_path)])
     assert exit_code == 0
     assert fake_cdp["dual_snapshot_calls"][0]["include_frames"] is False
 
