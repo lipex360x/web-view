@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file. The format 
 
 _No unreleased changes._
 
+## [0.7.0] — 2026-06-18
+
+### Added
+
+- **`web-view eval --js-file <path>` and stdin (`--js -`)** give `eval` two more ways to supply the expression beyond inline `--js "<expr>"`. `--js-file` reads the JavaScript from a file; `--js -` reads it from stdin (`echo "document.title" | web-view eval --js -`, `cat find-media.js | web-view eval --js - --frame index_lms`). `--js` and `--js-file` are a required, mutually exclusive group, so passing both or neither is rejected with a clear argparse error. A missing or unreadable `--js-file` prints a structured error to stderr and exits 1. Inline `--js`, the `--frame` / `--tab` / `--port` behaviour, and the JSON output path are unchanged. This lets reusable multi-line `.js` snippets run natively through the CLI instead of being quoted inline or pushed into separate Playwright scripts. Closes #17.
+
 ## [0.6.0] — 2026-06-18
 
 Iframe support (#11): see and act inside same-origin iframes, plus two new
