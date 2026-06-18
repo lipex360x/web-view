@@ -228,6 +228,8 @@ web-view tab      <verb>          # new | close | switch
                   switch [--tab <index|substring>] # defaults to first non-helper tab
                   [--port P] [--quiet]
 web-view eval     --js EXPR        # run JS in a tab/frame, print result as JSON
+                  | --js -          # read the expression from stdin
+                  | --js-file PATH  # read the expression from a file
                   [--frame F] [--tab T] [--port P]
 web-view download --url URL --out PATH             # fetch via browser cookies
                   [--port P]
@@ -247,7 +249,7 @@ To act on an element inside an iframe (SCORM / HTML5 courses, embedded players),
 
 `web-view tab <verb>` manages the tab lifecycle as a thin pass-through to the library's `cdp.open_tab` / `cdp.close_tab` / `cdp.switch_to_tab` helpers. `tab new` opens a fresh tab (`about:blank` unless `--url` is given) and is the preferred form for new code over `navigate --new-tab` (which keeps working). `tab close` requires `--tab` on purpose: closing is destructive, so there is no implicit "first tab" default that could discard a logged-in session by accident. `tab switch` is non-destructive and therefore defaults to the first non-helper tab when `--tab` is omitted. Tab selection mirrors `navigate`: a 0-based index (negatives count from the end) or a URL substring.
 
-`web-view eval` runs a JavaScript expression in a tab (or a chosen frame via `--frame`) and prints the result to stdout as JSON, so it composes with `jq` and friends. It is the escape hatch for anything the structured verbs do not cover (reading `currentSrc` off every `<video>`, pulling computed styles, scraping a value). A result that cannot be serialised to JSON prints a structured error to stderr and exits 1 instead of dumping a traceback.
+`web-view eval` runs a JavaScript expression in a tab (or a chosen frame via `--frame`) and prints the result to stdout as JSON, so it composes with `jq` and friends. It is the escape hatch for anything the structured verbs do not cover (reading `currentSrc` off every `<video>`, pulling computed styles, scraping a value). A result that cannot be serialised to JSON prints a structured error to stderr and exits 1 instead of dumping a traceback. The expression comes from exactly one source: inline `--js "<expr>"`, `--js -` to read it from stdin (`echo "document.title" | web-view eval --js -`), or `--js-file <path>` to read it from a file (`web-view eval --js-file ./find-media.js --frame index_lms`). `--js` and `--js-file` are mutually exclusive; a missing `--js-file` errors on stderr and exits 1. Keeping multi-line scripts in a file or piping them in avoids the shell-quoting pain of inline JS.
 
 `web-view download` fetches a URL through the browser context with `context.request.get`, so the logged-in session's cookies travel with the request and a resource behind a login is reachable without re-authenticating. It saves the body to `--out` and prints the HTTP status and saved byte count; a non-2xx status prints an error to stderr and exits 1. Pair it with `eval` to first discover a media URL, then pull it: `web-view eval --js "document.querySelector('video').currentSrc" | tr -d '"' | xargs -I{} web-view download --url {} --out clip.mp4`.
 
