@@ -29,6 +29,9 @@ EPILOG = """\
 Examples:
   web-view do right-click --role cell --name "A1"
   web-view do right-click --selector "[data-row=3]"
+  web-view do right-click --role cell --name "A1" --frame 1
+
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 

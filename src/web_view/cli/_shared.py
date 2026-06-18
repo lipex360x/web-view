@@ -41,6 +41,58 @@ def resolve_target_tab(context: Any, selector: str | None) -> Any:
     return cdp.find_page(context, url_contains=selector)
 
 
+def _parse_frame_index(selector: str) -> int | None:
+    candidate = selector[1:] if selector.startswith("-") else selector
+    return int(selector) if candidate.isdigit() else None
+
+
+def _auto_frame(page: Any, probe: Any) -> Any:
+    frames = list(getattr(page, "frames", []))
+    if not frames or probe is None:
+        return page
+    for root in [page, *frames]:
+        if probe(root):
+            return root
+    return page
+
+
+def resolve_target_frame(page: Any, selector: str | None, *, probe: Any = None) -> Any:
+    """Pick the frame a frame-bound `do` verb should act on.
+
+    Selector forms (mirroring `--tab`):
+      - `None` / `"auto"`   → cheap-probe the page and every frame; first hit
+        wins, falling back to the page when nothing matches.
+      - integer string      → 0-based index into `page.frames` (0 is the top
+        frame); negatives count from the end.
+      - any other string    → URL substring; the first matching frame wins.
+
+    Returns `None` when an explicit index or substring cannot be resolved, so
+    the caller can print a structured error.
+    """
+    if selector is None or selector == "auto":
+        return _auto_frame(page, probe)
+    index = _parse_frame_index(selector)
+    if index is not None:
+        frames = list(getattr(page, "frames", []))
+        try:
+            return frames[index]
+        except IndexError:
+            return None
+    for frame in getattr(page, "frames", []):
+        if selector in frame.url:
+            return frame
+    return None
+
+
+def print_no_frame_found(selector: str) -> None:
+    print(
+        f"No frame matched {selector!r}.\n"
+        "Use an index (0-based, 0 is the top frame), a URL substring, or 'auto'.\n"
+        "See the frame tree: web-view snap (iframes are inlined by default)",
+        file=sys.stderr,
+    )
+
+
 def print_no_instance_on_port(port: int) -> None:
     print(
         f"No CDP Chrome instance on port {port}.\n"

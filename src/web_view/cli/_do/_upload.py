@@ -29,8 +29,10 @@ EPILOG = """\
 Examples:
   web-view do upload --role button --name "Choose file" --file ./report.pdf
   web-view do upload --selector "input[type=file]" --file ./avatar.png
+  web-view do upload --role button --name "Attach" --file ./a.pdf --frame 1
 
 `--file` is required and must point to an existing path.
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 

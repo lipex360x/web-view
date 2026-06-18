@@ -31,8 +31,19 @@ Element addressing (every verb except `press` and `drag`):
 Common options:
   --port <N>      optional when exactly one CDP Chrome is running
   --tab <T>       index (0-based, negatives allowed) or URL substring
+  --frame <F>     index (0 is the top frame), URL substring, or 'auto'
   --timeout <s>   upper bound in seconds (default 15; ignored by scroll-into-view)
   --quiet / -q    suppress the success ack on stdout
+
+Frame targeting (all verbs except `press`):
+  --frame auto    search the top frame and every same-origin frame, first
+                  hit wins. This is the default, so an in-frame element is
+                  found without naming the frame.
+  --frame 1       index into the page's frame list (0 is the top frame)
+  --frame lms     first frame whose URL contains 'lms'
+
+  web-view do click --role button --name "ENTER"            # auto-find frame
+  web-view do click --role radio --name "Option B" --frame index_lms
 
 See `web-view do <verb> -h` for per-verb examples.
 """

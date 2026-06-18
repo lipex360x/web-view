@@ -29,8 +29,10 @@ EPILOG = """\
 Examples:
   web-view do check --role checkbox --name "Remember me"
   web-view do check --selector "input[name=tos]"
+  web-view do check --role radio --name "Option B" --frame index_lms
 
 Idempotent: no-op if the element is already checked.
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 

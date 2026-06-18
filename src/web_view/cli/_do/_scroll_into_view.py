@@ -29,9 +29,11 @@ EPILOG = """\
 Examples:
   web-view do scroll-into-view --role region --name "Footer"
   web-view do scroll-into-view --selector "#contact-form"
+  web-view do scroll-into-view --role region --name "Footer" --frame 1
 
 Does not wait for visibility — call `do hover` or `do click` afterwards
 to interact with the element.
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 

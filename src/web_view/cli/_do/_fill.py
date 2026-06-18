@@ -38,9 +38,11 @@ Examples:
   web-view do fill --role textbox --name "Email" --value "user@example.com"
   web-view do fill --role textbox --name "Body" < long-message.txt
   echo "hello" | web-view do fill --selector "#title"
+  web-view do fill --role textbox --name "Answer" --value "42" --frame 1
 
 `--value` is optional: when omitted, the value is read from stdin until
 EOF. Useful for multi-line content and shell here-docs.
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 

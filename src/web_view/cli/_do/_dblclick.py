@@ -29,6 +29,9 @@ EPILOG = """\
 Examples:
   web-view do dblclick --role link --name "Open"
   web-view do dblclick --selector ".editable-cell"
+  web-view do dblclick --role link --name "Open" --frame 1
+
+`--frame` targets a frame (index, URL substring, or 'auto'; default 'auto').
 """
 
 
