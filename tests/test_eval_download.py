@@ -124,11 +124,10 @@ def test_download_non_2xx_exits_1(
 ) -> None:
     _seed_single(fake_cdp)
     fake_cdp["download_result"] = {"status": 404, "bytes": 12}
-    exit_code = _run(
-        ["download", "--url", "https://host/missing", "--out", str(tmp_path / "x")]
-    )
+    exit_code = _run(["download", "--url", "https://host/missing", "--out", str(tmp_path / "x")])
     assert exit_code == 1
-    assert "404" in (capsys.readouterr().err + capsys.readouterr().out)
+    captured = capsys.readouterr()
+    assert "404" in captured.out + captured.err
 
 
 def test_eval_help_documents_usage(capsys: pytest.CaptureFixture[str]) -> None:

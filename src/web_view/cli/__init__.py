@@ -12,7 +12,7 @@ import argparse
 import sys
 from importlib import metadata
 
-from . import _do, _list, _navigate, _resize, _snap, _start, _stop, _tab
+from . import _do, _download, _eval, _list, _navigate, _resize, _snap, _start, _stop, _tab
 
 DESCRIPTION = "Drive Chrome over CDP. Run 'web-view <command> -h' for details."
 
@@ -56,6 +56,8 @@ def _build_parser() -> argparse.ArgumentParser:
     _do.register(subparsers)
     _resize.register(subparsers)
     _tab.register(subparsers)
+    _eval.register(subparsers)
+    _download.register(subparsers)
     return parser
 
 

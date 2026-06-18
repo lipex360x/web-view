@@ -86,7 +86,8 @@ from ._connection import (
     switch_to_tab,
 )
 from ._console import ConsoleEvent, ConsoleRecorder, console_recorder
-from ._files import capture_download, upload
+from ._evaluate import evaluate
+from ._files import capture_download, download_resource, upload
 from ._interaction import (
     check,
     click,
@@ -154,9 +155,11 @@ __all__ = [
     "connect",
     "console_recorder",
     "dblclick",
+    "download_resource",
     "drag",
     "dual_snapshot",
     "dump_network",
+    "evaluate",
     "fill",
     "find_page",
     "forward",

@@ -46,3 +46,18 @@ def upload(
     locator = wait_locator(page, role, name, exact=exact, timeout_s=timeout_s, state="attached")
     raw_paths = file_paths if isinstance(file_paths, list) else [file_paths]
     locator.set_input_files([str(path) for path in raw_paths])
+
+
+def download_resource(context: Any, source_url: str, destination: Path) -> dict[str, Any]:
+    """Fetch `source_url` through the browser context and save it to `destination`.
+
+    Uses `context.request.get`, so the browser's auth cookies are reused and a
+    resource behind a login is reachable without re-authenticating. Writes the
+    response body to `destination` and returns `{"status", "bytes"}`. The caller
+    decides what a non-2xx status means.
+    """
+    response = context.request.get(source_url)
+    body = response.body()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(body)
+    return {"status": response.status, "bytes": len(body)}
