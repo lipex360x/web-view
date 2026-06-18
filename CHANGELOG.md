@@ -4,8 +4,17 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.6.0] — 2026-06-18
+
+Iframe support (#11): see and act inside same-origin iframes, plus two new
+escape-hatch verbs. Three additive parts, all backward-compatible.
+
 ### Added
 
+- **`web-view eval --js "<expr>"`** (library: `cdp.evaluate(root, expression)`) runs a JavaScript expression in a tab, or in a chosen frame via `--frame`, and prints the result to stdout as JSON. It is the escape hatch for anything the structured verbs do not cover (read `currentSrc` off every `<video>`, scrape a computed value). A result that cannot be serialised to JSON prints a structured error to stderr and exits 1 instead of leaking a traceback. Part 3 of #11.
+- **`web-view download --url <u> --out <path>`** (library: `cdp.download_resource(context, source_url, destination)`) fetches a URL through the browser context (`context.request.get`), so the logged-in session's cookies travel with the request and a resource behind a login is reachable without re-authenticating. Saves the body to `--out` and prints the HTTP status + saved byte count; a non-2xx status prints an error to stderr and exits 1. `cdp.evaluate` and `cdp.download_resource` are exported in `web_view.cdp.__all__`. Part 3 of #11.
 - **`--frame` selector for `web-view do <verb>`** lets every element-targeting verb (`click`, `fill`, `check`, `hover`, `dblclick`, `right-click`, `scroll-into-view`, `upload`, `drag`) act on an element inside an iframe. Grammar mirrors `--tab`: an index (`--frame 1`, 0-based, `0` is the top frame), a URL substring (`--frame index_lms`), or `auto` (the default). `auto` cheap-probes the top frame and every same-origin frame with a non-waiting `.count()` and acts on the first that holds the element, so an in-frame button is clicked without naming its frame and the probe never multiplies `--timeout` across frames. An unresolvable `--frame` (out-of-range index, no URL match) prints a structured error to stderr and exits 1. `press` is intentionally excluded: keyboard input targets focus, not a frame. Part 2 of #11.
 - **`web-view snap` recurses into same-origin iframes** (and `cdp.aria_snapshot(page, include_frames=True)`). The ARIA YAML now expands each `- iframe` leaf in place: same-origin frames have their accessibility tree inlined under the node and labelled with the frame URL, so content rendered inside an iframe (SCORM / HTML5 courses, embedded players) becomes visible to the structured snapshot instead of stopping at a bare `- iframe`. Cross-origin frames are annotated `- iframe (cross-origin, not captured)` rather than dropped silently, and never raise. `web-view snap --no-frames` (library: `include_frames=False`) reproduces the previous top-frame-only output. `cdp.dual_snapshot` threads `include_frames` through. Part 1 of #11.
 

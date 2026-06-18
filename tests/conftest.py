@@ -230,6 +230,24 @@ def _make_switch_to_tab(state: dict[str, Any]) -> Any:
     return fake_switch_to_tab
 
 
+def _make_evaluate(state: dict[str, Any]) -> Any:
+    def fake_evaluate(root: Any, expression: str) -> Any:
+        state["evaluate_calls"].append({"root": root, "expression": expression})
+        return state["evaluate_result"]
+
+    return fake_evaluate
+
+
+def _make_download_resource(state: dict[str, Any]) -> Any:
+    def fake_download_resource(context: Any, source_url: str, destination: Path) -> dict[str, Any]:
+        state["download_resource_calls"].append(
+            {"context": context, "source_url": source_url, "destination": destination}
+        )
+        return state["download_result"]
+
+    return fake_download_resource
+
+
 def _make_interaction_recorder(state: dict[str, Any], verb: str) -> Any:
     def fake_recorder(*positional: Any, **keyword: Any) -> None:
         state[f"{verb}_calls"].append({"positional": positional, "keyword": keyword})
@@ -266,6 +284,10 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "switch_to_tab_calls": [],
         "snapshots": [],
         "dual_snapshot_calls": [],
+        "evaluate_calls": [],
+        "evaluate_result": None,
+        "download_resource_calls": [],
+        "download_result": {"status": 200, "bytes": 1024},
         "connect_raises": None,
         "ready": True,
     }
@@ -285,6 +307,10 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(cdp_module, "open_tab", _make_open_tab(state))
     monkeypatch.setattr(cdp_module, "close_tab", _make_close_tab(state))
     monkeypatch.setattr(cdp_module, "switch_to_tab", _make_switch_to_tab(state))
+    monkeypatch.setattr(cdp_module, "evaluate", _make_evaluate(state), raising=False)
+    monkeypatch.setattr(
+        cdp_module, "download_resource", _make_download_resource(state), raising=False
+    )
     for verb in _INTERACTION_VERBS:
         monkeypatch.setattr(cdp_module, verb, _make_interaction_recorder(state, verb))
     for verb in _WINDOW_VERBS:

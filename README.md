@@ -227,6 +227,10 @@ web-view tab      <verb>          # new | close | switch
                   close  --tab <index|substring>   # --tab required (destructive)
                   switch [--tab <index|substring>] # defaults to first non-helper tab
                   [--port P] [--quiet]
+web-view eval     --js EXPR        # run JS in a tab/frame, print result as JSON
+                  [--frame F] [--tab T] [--port P]
+web-view download --url URL --out PATH             # fetch via browser cookies
+                  [--port P]
 ```
 
 `web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
@@ -242,6 +246,10 @@ To act on an element inside an iframe (SCORM / HTML5 courses, embedded players),
 `web-view resize` resizes a running Chrome window. Default mode targets the OS-level window (Chrome physically grows or shrinks on the desktop) via CDP `Browser.setWindowBounds`. `--viewport` switches to a page-only viewport override — useful for responsive-layout testing without disturbing the window manager. The initial size is controlled by `web-view start --window-size WxH` (default `1920x1080`).
 
 `web-view tab <verb>` manages the tab lifecycle as a thin pass-through to the library's `cdp.open_tab` / `cdp.close_tab` / `cdp.switch_to_tab` helpers. `tab new` opens a fresh tab (`about:blank` unless `--url` is given) and is the preferred form for new code over `navigate --new-tab` (which keeps working). `tab close` requires `--tab` on purpose: closing is destructive, so there is no implicit "first tab" default that could discard a logged-in session by accident. `tab switch` is non-destructive and therefore defaults to the first non-helper tab when `--tab` is omitted. Tab selection mirrors `navigate`: a 0-based index (negatives count from the end) or a URL substring.
+
+`web-view eval` runs a JavaScript expression in a tab (or a chosen frame via `--frame`) and prints the result to stdout as JSON, so it composes with `jq` and friends. It is the escape hatch for anything the structured verbs do not cover (reading `currentSrc` off every `<video>`, pulling computed styles, scraping a value). A result that cannot be serialised to JSON prints a structured error to stderr and exits 1 instead of dumping a traceback.
+
+`web-view download` fetches a URL through the browser context with `context.request.get`, so the logged-in session's cookies travel with the request and a resource behind a login is reachable without re-authenticating. It saves the body to `--out` and prints the HTTP status and saved byte count; a non-2xx status prints an error to stderr and exits 1. Pair it with `eval` to first discover a media URL, then pull it: `web-view eval --js "document.querySelector('video').currentSrc" | tr -d '"' | xargs -I{} web-view download --url {} --out clip.mp4`.
 
 For programmatic use, the CLI is just a wrapper — everything is exposed via `from web_view import cdp`.
 
@@ -331,6 +339,10 @@ saved = cdp.capture_download(
 )
 
 cdp.upload(page, "button", "Choose file", ["/path/to/file.pdf"])
+
+# fetch a resource through the browser context (reuses the session cookies)
+report = cdp.download_resource(context, "https://host/report.pdf", Path("./report.pdf"))
+# {"status": 200, "bytes": 51234}
 ```
 
 ### Cookies + storage + clipboard
@@ -358,6 +370,9 @@ cdp.screenshot(page, Path("./captures/full.png"), full_page=True)
 yaml_text = cdp.aria_snapshot(page, destination=Path("./captures/page.aria.yaml"))
 # same-origin iframes are inlined by default; pass include_frames=False to opt out
 top_only = cdp.aria_snapshot(page, include_frames=False)
+
+# run JS in a page or a frame and get the deserialised result
+sources = cdp.evaluate(page, "[...document.querySelectorAll('video')].map(v => v.currentSrc)")
 
 html = cdp.get_html(page)                                       # full document
 html = cdp.get_html(page, locator=page.get_by_role("main"))     # one element
