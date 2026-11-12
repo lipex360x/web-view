@@ -39,7 +39,7 @@ Port / tab selection follows `web-view navigate` semantics.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "click",
         help="click an element",

@@ -49,7 +49,7 @@ See `web-view do <verb> -h` for per-verb examples.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "do",
         help="act on elements in a tab (click, fill, press, hover, …)",

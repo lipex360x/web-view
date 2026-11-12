@@ -32,7 +32,7 @@ Port selection follows `web-view navigate` semantics:
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "new",
         help="open a new tab (about:blank by default)",

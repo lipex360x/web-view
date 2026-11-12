@@ -1,0 +1,7 @@
+interface:
+  display_name: "web-view"
+  short_description: "Open CDP Chrome for guided browsing and web tests"
+  default_prompt: "Use $web-view to open CDP Chrome and follow my browsing instructions."
+
+policy:
+  allow_implicit_invocation: true

@@ -27,7 +27,7 @@ Port selection follows `web-view navigate` semantics. See
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "tab",
         help="manage tabs (new, close, switch)",

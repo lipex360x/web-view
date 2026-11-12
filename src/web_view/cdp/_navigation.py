@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 
 def goto(page: Any, target_url: str, *, wait_until: str = "domcontentloaded") -> None:
@@ -22,7 +22,7 @@ def wait_for_url(
     Returns the URL once matched. Raises on timeout.
     """
     page.wait_for_url(predicate, timeout=int(timeout_s * 1000))
-    return page.url
+    return cast(str, page.url)
 
 
 def _navigate_history(

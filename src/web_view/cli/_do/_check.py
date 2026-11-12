@@ -36,7 +36,7 @@ Idempotent: no-op if the element is already checked.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "check",
         help="tick a checkbox / radio / switch",

@@ -35,7 +35,7 @@ Examples:
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "right-click",
         help="right-click (context-menu) an element",

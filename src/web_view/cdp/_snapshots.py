@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ._shared import locator_by_role, same_origin
 
@@ -37,7 +37,7 @@ def aria_snapshot(
     labelled with the frame URL; cross-origin frames are annotated
     `- iframe (cross-origin, not captured)` so the omission is visible.
     """
-    text = page.aria_snapshot()
+    text = cast(str, page.aria_snapshot())
     if include_frames:
         text = _inline_child_frames(page, text)
     if destination is not None:
@@ -142,8 +142,8 @@ def dual_snapshot(
 def get_html(page: Any, *, locator: Any = None) -> str:
     """Return full-page HTML, or the outer HTML of a specific locator."""
     if locator is None:
-        return page.content()
-    return locator.evaluate("element => element.outerHTML")
+        return cast(str, page.content())
+    return cast(str, locator.evaluate("element => element.outerHTML"))
 
 
 def inspect_element(

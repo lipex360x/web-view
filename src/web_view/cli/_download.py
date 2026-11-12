@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from http import HTTPStatus
 from pathlib import Path
 
 from .. import cdp
@@ -11,7 +12,7 @@ from ._shared import resolve_single_port
 
 
 def _is_success(status: int) -> bool:
-    return 200 <= status < 300
+    return HTTPStatus.OK <= status < HTTPStatus.MULTIPLE_CHOICES
 
 
 def handle(arguments: argparse.Namespace) -> int:
@@ -41,7 +42,7 @@ an error to stderr and exits 1.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "download",
         help="fetch a URL through the browser (reusing cookies) and save it",

@@ -103,7 +103,7 @@ def start_chrome(
     window_size: tuple[int, int] = (1920, 1080),
     extra_args: list[str] | None = None,
     binary: str | None = None,
-) -> subprocess.Popen:
+) -> subprocess.Popen[bytes]:
     """Launch Chrome with CDP on `port` and a persistent `user_data_dir`.
 
     `window_size` is a `(width, height)` tuple forwarded to Chrome's
@@ -238,7 +238,7 @@ def list_cdp_instances() -> list[CdpInstance]:
     return _list_instances_unix()
 
 
-def _stop_process_handle(process: subprocess.Popen) -> int:
+def _stop_process_handle(process: subprocess.Popen[bytes]) -> int:
     try:
         if platform.system() == "Windows":
             process.terminate()
@@ -264,7 +264,7 @@ def stop_chrome(
     *,
     port: int | None = None,
     pid: int | None = None,
-    process: subprocess.Popen | None = None,
+    process: subprocess.Popen[bytes] | None = None,
 ) -> int:
     """Terminate Chrome by port, pid, or Popen handle. Returns count killed.
 

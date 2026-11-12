@@ -5,17 +5,12 @@ from __future__ import annotations
 import argparse
 
 from .. import cdp
-from ._shared import print_no_tab_found, resolve_single_port, resolve_target_tab
+from ._shared import connected_tab
 
 
 def handle(arguments: argparse.Namespace) -> int:
-    target_port = resolve_single_port(arguments.port)
-    if target_port is None:
-        return 1
-    with cdp.connect(port=target_port) as (_, context):
-        page = resolve_target_tab(context, arguments.tab)
+    with connected_tab(arguments.port, arguments.tab) as page:
         if page is None:
-            print_no_tab_found(arguments.tab or "")
             return 1
         if arguments.viewport:
             cdp.set_viewport(page, width=arguments.width, height=arguments.height)
@@ -50,7 +45,7 @@ reloads.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "resize",
         help="resize the OS window or page viewport",
