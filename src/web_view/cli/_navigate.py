@@ -48,7 +48,7 @@ Tab selection:
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "navigate",
         help="load a URL in a running CDP Chrome (existing tab or new one)",

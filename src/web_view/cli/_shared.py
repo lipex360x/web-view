@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from .. import cdp
@@ -148,3 +150,17 @@ def resolve_single_port(explicit_port: int | None) -> int | None:
         print_ambiguous_instances(instances)
         return None
     return instances[0].port
+
+
+@contextmanager
+def connected_tab(port: int | None, selector: str | None) -> Iterator[Any]:
+    """Connect to a selected tab, yielding None after structured resolution errors."""
+    target_port = resolve_single_port(port)
+    if target_port is None:
+        yield None
+        return
+    with cdp.connect(port=target_port) as (_, context):
+        page = resolve_target_tab(context, selector)
+        if page is None:
+            print_no_tab_found(selector or "")
+        yield page

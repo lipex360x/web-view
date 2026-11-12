@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Any
+from typing import Any, cast
 
 from ... import cdp
 from ._shared import (
@@ -16,7 +16,7 @@ from ._shared import (
 
 def _read_value(arguments: argparse.Namespace) -> str:
     if arguments.value is not None:
-        return arguments.value
+        return cast(str, arguments.value)
     return sys.stdin.read()
 
 
@@ -46,7 +46,7 @@ EOF. Useful for multi-line content and shell here-docs.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "fill",
         help="type text into an input element",

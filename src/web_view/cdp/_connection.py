@@ -69,7 +69,7 @@ def find_page(
     """
     if url_contains is None and predicate is None:
         raise ValueError("pass either url_contains or predicate")
-    matcher = predicate or (lambda page_url: url_contains in page_url)
+    matcher = predicate or (lambda page_url: (url_contains or "") in page_url)
     for page in context.pages:
         with contextlib.suppress(Exception):
             if matcher(page.url):

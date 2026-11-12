@@ -36,7 +36,7 @@ Examples:
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "upload",
         help="attach a file to a file-input element",

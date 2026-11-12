@@ -7,11 +7,13 @@ from pathlib import Path
 
 from .. import cdp
 
+_WINDOW_DIMENSIONS = 2
+
 
 def _parse_window_size(raw: str) -> tuple[int, int]:
     """argparse `type=` callable: parses 'WxH' into (width, height)."""
     parts = raw.lower().split("x")
-    if len(parts) != 2:
+    if len(parts) != _WINDOW_DIMENSIONS:
         raise argparse.ArgumentTypeError(f"--window-size expects WxH (e.g. 1280x720); got {raw!r}")
     try:
         width = int(parts[0])
@@ -65,7 +67,7 @@ detached and keeps running after this command exits — stop it with
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "start",
         help="launch a CDP Chrome on a port",

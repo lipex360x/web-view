@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from ._shared import ensure_storage_kind
 
@@ -52,9 +52,12 @@ def get_storage(page: Any, *, kind: str = "local") -> dict[str, str]:
     """Dump localStorage (kind='local') or sessionStorage (kind='session')."""
     ensure_storage_kind(kind)
     store = f"{kind}Storage"
-    return page.evaluate(
-        f"() => {{ const out = {{}}; for (let i = 0; i < {store}.length; i++) "
-        f"{{ const k = {store}.key(i); out[k] = {store}.getItem(k); }} return out; }}"
+    return cast(
+        dict[str, str],
+        page.evaluate(
+            f"() => {{ const out = {{}}; for (let i = 0; i < {store}.length; i++) "
+            f"{{ const k = {store}.key(i); out[k] = {store}.getItem(k); }} return out; }}"
+        ),
     )
 
 
@@ -76,7 +79,7 @@ def read_clipboard(page: Any) -> str:
 
     Requires `clipboard-read` permission on the BrowserContext.
     """
-    return page.evaluate("() => navigator.clipboard.readText()")
+    return cast(str, page.evaluate("() => navigator.clipboard.readText()"))
 
 
 def write_clipboard(page: Any, text: str) -> None:

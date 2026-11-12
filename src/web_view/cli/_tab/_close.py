@@ -43,7 +43,7 @@ or a URL substring (first match wins).
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "close",
         help="close a specific tab (--tab required)",

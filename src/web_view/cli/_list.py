@@ -53,7 +53,7 @@ TABS shows `?` when the instance is up but the tabs can't be enumerated
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "list",
         help="list running CDP Chrome instances",

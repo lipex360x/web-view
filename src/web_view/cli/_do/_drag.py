@@ -7,11 +7,9 @@ import sys
 
 from ... import cdp
 from .._shared import (
+    connected_tab,
     print_no_frame_found,
-    print_no_tab_found,
-    resolve_single_port,
     resolve_target_frame,
-    resolve_target_tab,
 )
 from ._shared import addressing_probe
 
@@ -36,13 +34,8 @@ def handle(arguments: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-    target_port = resolve_single_port(arguments.port)
-    if target_port is None:
-        return 1
-    with cdp.connect(port=target_port) as (_, context):
-        page = resolve_target_tab(context, arguments.tab)
+    with connected_tab(arguments.port, arguments.tab) as page:
         if page is None:
-            print_no_tab_found(arguments.tab or "")
             return 1
         root = resolve_target_frame(page, arguments.frame, probe=addressing_probe(source))
         if root is None:
@@ -68,7 +61,7 @@ both endpoints are resolved inside the same frame.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "drag",
         help="drag one element onto another",

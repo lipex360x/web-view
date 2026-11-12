@@ -5,15 +5,12 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
-from ... import cdp
 from .._shared import (
+    connected_tab,
     print_no_frame_found,
-    print_no_tab_found,
-    resolve_single_port,
     resolve_target_frame,
-    resolve_target_tab,
 )
 
 DEFAULT_TIMEOUT_SECONDS = 15.0
@@ -74,7 +71,7 @@ def resolve_addressing(arguments: argparse.Namespace) -> tuple[str, str] | str |
                 file=sys.stderr,
             )
             return None
-        return arguments.selector
+        return cast(str, arguments.selector)
     if arguments.role is None or arguments.name is None:
         print(
             "error: must specify --role + --name (or --selector)",
@@ -109,8 +106,8 @@ def addressing_probe(addressing: tuple[str, str] | str) -> Callable[[Any], bool]
     def probe(root: Any) -> bool:
         if isinstance(addressing, tuple):
             role, name = addressing
-            return root.get_by_role(role, name=name, exact=True).count() > 0
-        return root.locator(addressing).count() > 0
+            return bool(root.get_by_role(role, name=name, exact=True).count() > 0)
+        return bool(root.locator(addressing).count() > 0)
 
     return probe
 
@@ -130,13 +127,8 @@ def run_addressed_verb(
     addressing = resolve_addressing(arguments)
     if addressing is None:
         return 1
-    target_port = resolve_single_port(arguments.port)
-    if target_port is None:
-        return 1
-    with cdp.connect(port=target_port) as (_, context):
-        page = resolve_target_tab(context, arguments.tab)
+    with connected_tab(arguments.port, arguments.tab) as page:
         if page is None:
-            print_no_tab_found(arguments.tab or "")
             return 1
         root = resolve_target_frame(page, arguments.frame, probe=addressing_probe(addressing))
         if root is None:

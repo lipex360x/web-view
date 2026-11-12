@@ -28,7 +28,7 @@ prints the candidate `--port` values and exits with a non-zero status.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "stop",
         help="stop a CDP Chrome instance",

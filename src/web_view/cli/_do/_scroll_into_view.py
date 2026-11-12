@@ -37,7 +37,7 @@ to interact with the element.
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "scroll-into-view",
         help="scroll an element into view",

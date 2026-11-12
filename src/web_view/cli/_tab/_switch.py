@@ -38,10 +38,11 @@ def handle(arguments: argparse.Namespace) -> int:
         return 1
     selector = arguments.tab
     with cdp.connect(port=target_port) as (_, context):
-        if is_index_selector(selector):
-            page = _focus_by_index(context, selector)
-        else:
-            page = _focus_by_url(context, selector)
+        page = (
+            _focus_by_index(context, selector)
+            if is_index_selector(selector)
+            else _focus_by_url(context, selector)
+        )
         if page is None:
             print_no_tab_found(selector or "")
             return 1
@@ -63,7 +64,7 @@ Tab selection (defaults to the first non-helper tab when omitted):
 """
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "switch",
         help="bring a tab to the front (defaults to the first non-helper tab)",

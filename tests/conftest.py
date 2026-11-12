@@ -180,6 +180,16 @@ def _make_dual_snapshot(state: dict[str, Any]) -> Any:
     return fake_dual_snapshot
 
 
+def _make_aria_snapshot(state: dict[str, Any]) -> Any:
+    original = cdp_module.aria_snapshot
+
+    def fake_aria_snapshot(page: SimpleNamespace, destination: Path, **kwargs: Any) -> str:
+        state["aria_snapshot_calls"].append(kwargs)
+        return original(page, destination, **kwargs)
+
+    return fake_aria_snapshot
+
+
 def _make_pages_info() -> Any:
     def fake_pages_info(context: FakeContext) -> list[dict[str, str]]:
         return [{"url": page.url, "title": page.title()} for page in context.pages]
@@ -284,6 +294,7 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "switch_to_tab_calls": [],
         "snapshots": [],
         "dual_snapshot_calls": [],
+        "aria_snapshot_calls": [],
         "evaluate_calls": [],
         "evaluate_result": None,
         "download_resource_calls": [],
@@ -301,6 +312,7 @@ def fake_cdp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(cdp_module, "connect", _make_connect(state))
     monkeypatch.setattr(cdp_module, "find_page", _make_find_page())
     monkeypatch.setattr(cdp_module, "dual_snapshot", _make_dual_snapshot(state))
+    monkeypatch.setattr(cdp_module, "aria_snapshot", _make_aria_snapshot(state))
     monkeypatch.setattr(cdp_module, "pages_info", _make_pages_info())
     monkeypatch.setattr(cdp_module, "is_cdp_ready", _make_is_cdp_ready(state))
     monkeypatch.setattr(cdp_module, "goto", _make_goto(state))

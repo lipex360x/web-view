@@ -27,7 +27,7 @@ def test_snap_auto_slug_writes_snap_files(
     assert exit_code == 0
     files = sorted(tmp_path.iterdir())
     names = [item.name for item in files]
-    assert any(name.endswith("-snap.png") for name in names)
+    assert not any(name.endswith(".png") for name in names)
     assert any(name.endswith("-snap.aria.yaml") for name in names)
 
 
@@ -54,12 +54,9 @@ def test_snap_prints_absolute_paths_to_stdout(
     assert exit_code == 0
     captured = capsys.readouterr()
     lines = [line for line in captured.out.splitlines() if line.strip()]
-    assert len(lines) == 2
-    png_line, aria_line = lines
-    assert png_line.endswith(".png")
-    assert aria_line.endswith(".aria.yaml")
-    assert Path(png_line).is_absolute()
-    assert Path(aria_line).is_absolute()
+    assert len(lines) == 1
+    assert lines[0].endswith(".aria.yaml")
+    assert Path(lines[0]).is_absolute()
 
 
 def test_aria_snapshot_inlines_same_origin_frame_children() -> None:
@@ -137,7 +134,7 @@ def test_snap_no_frames_passes_include_frames_false(
     fake_cdp["pages"] = [make_fake_page(page_url="file:///index.html", page_title="Home")]
     exit_code = _run(["snap", "--no-frames", "--port", "9222", "--destination-dir", str(tmp_path)])
     assert exit_code == 0
-    assert fake_cdp["dual_snapshot_calls"][0]["include_frames"] is False
+    assert fake_cdp["aria_snapshot_calls"][0]["include_frames"] is False
 
 
 def test_snap_default_passes_include_frames_true(
@@ -148,7 +145,7 @@ def test_snap_default_passes_include_frames_true(
     fake_cdp["pages"] = [make_fake_page(page_url="file:///index.html", page_title="Home")]
     exit_code = _run(["snap", "--port", "9222", "--destination-dir", str(tmp_path)])
     assert exit_code == 0
-    assert fake_cdp["dual_snapshot_calls"][0]["include_frames"] is True
+    assert fake_cdp["aria_snapshot_calls"][0]["include_frames"] is True
 
 
 def test_snap_help_documents_no_frames(
@@ -156,8 +153,8 @@ def test_snap_help_documents_no_frames(
 ) -> None:
     with pytest.raises(SystemExit):
         _run(["snap", "--help"])
-    output = capsys.readouterr().out
-    assert "--no-frames" in output
+    captured = capsys.readouterr()
+    assert "--no-frames" in captured.out
 
 
 def test_stop_without_port_stops_single_instance(
@@ -246,12 +243,11 @@ def test_list_shows_tab_count_and_urls(
     exit_code = _run(["list"])
     assert exit_code == 0
     captured = capsys.readouterr()
-    output = captured.out
-    assert "TABS" in output
-    assert "2" in output
-    assert "file:///index.html" in output
-    assert "chrome://newtab" in output
-    assert "Poster" in output
+    assert "TABS" in captured.out
+    assert "2" in captured.out
+    assert "file:///index.html" in captured.out
+    assert "chrome://newtab" in captured.out
+    assert "Poster" in captured.out
 
 
 def test_list_tab_connection_failure_shows_question_mark(
@@ -282,12 +278,11 @@ def test_root_help_is_terse_and_lists_commands(
     with pytest.raises(SystemExit):
         _run(["--help"])
     captured = capsys.readouterr()
-    output = captured.out
-    assert "web-view <command> -h" in output
+    assert "web-view <command> -h" in captured.out
     for command in ("start", "list", "stop", "navigate", "snap"):
-        assert command in output
-    assert "Library mode" in output
-    assert "uv tool install" in output
+        assert command in captured.out
+    assert "Library mode" in captured.out
+    assert "uv tool install" in captured.out
 
 
 def test_root_help_omits_per_command_detail(
@@ -374,7 +369,7 @@ def test_snap_without_port_uses_single_running_instance(
     exit_code = _run(["snap", "--destination-dir", str(tmp_path)])
     assert exit_code == 0
     names = [item.name for item in tmp_path.iterdir()]
-    assert any(name.endswith("-snap.png") for name in names)
+    assert not any(name.endswith(".png") for name in names)
 
 
 def test_snap_without_port_errors_when_zero(
@@ -510,10 +505,9 @@ def test_navigate_help_shows_tab_selection(
     with pytest.raises(SystemExit):
         _run(["navigate", "--help"])
     captured = capsys.readouterr()
-    output = captured.out
-    assert "Tab selection" in output
-    assert "--new-tab" in output
-    assert "--tab N" in output
+    assert "Tab selection" in captured.out
+    assert "--new-tab" in captured.out
+    assert "--tab N" in captured.out
 
 
 def test_snap_help_shows_examples_and_composability(
@@ -522,9 +516,8 @@ def test_snap_help_shows_examples_and_composability(
     with pytest.raises(SystemExit):
         _run(["snap", "--help"])
     captured = capsys.readouterr()
-    output = captured.out
-    assert "--url-contains" in output
-    assert "xargs" in output
+    assert "--url-contains" in captured.out
+    assert "xargs" in captured.out
 
 
 def test_stop_help_explains_port_optionality(
@@ -866,7 +859,6 @@ def test_do_help_lists_all_verbs(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         _run(["do", "--help"])
     captured = capsys.readouterr()
-    output = captured.out
     for verb in (
         "click",
         "fill",
@@ -879,7 +871,7 @@ def test_do_help_lists_all_verbs(capsys: pytest.CaptureFixture[str]) -> None:
         "upload",
         "drag",
     ):
-        assert verb in output
+        assert verb in captured.out
 
 
 def test_do_click_help_has_examples_epilog(
@@ -1299,17 +1291,17 @@ def test_tab_switch_explicit_port_no_instance_structured_error(
 def test_root_help_lists_eight_commands(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         _run(["--help"])
-    output = capsys.readouterr().out
+    captured = capsys.readouterr()
     for command in ("start", "list", "stop", "navigate", "snap", "do", "resize", "tab"):
-        assert command in output
+        assert command in captured.out
 
 
 def test_tab_help_lists_all_verbs(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         _run(["tab", "--help"])
-    output = capsys.readouterr().out
+    captured = capsys.readouterr()
     for verb in ("new", "close", "switch"):
-        assert verb in output
+        assert verb in captured.out
 
 
 def test_tab_new_help_has_examples_epilog(capsys: pytest.CaptureFixture[str]) -> None:

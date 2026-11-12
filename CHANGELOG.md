@@ -4,7 +4,18 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Changed
+
+- `web-view snap` now generates only ARIA YAML by default. Pass `--image` to retain PNG + YAML output and the previous PNG-first stdout order. Both modes share capture numbering; `cdp.dual_snapshot` is unchanged.
+
+### Development
+
+- Align the quality gate with the configured 100-character line length, complete type annotations, and share tab connection/error handling across CLI actions.
+
+### Added
+
+- A bundled `web-view` agent skill for guided CDP browsing and YAML-first page inspection.
+- `web-view install skill` with Codex/Claude selection, local/global scope, explicit destination, and backup-preserving `--force` updates.
 
 ## [0.7.0] — 2026-06-18
 

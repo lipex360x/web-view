@@ -14,6 +14,7 @@
 - [Why](#why)
 - [Installation](#installation)
 - [Quick start](#quick-start)
+- [Bundled agent skill](#bundled-agent-skill)
 - [CLI reference](#cli-reference)
 - [Library reference](#library-reference)
 - [Conventions](#conventions)
@@ -32,7 +33,7 @@ Most browser automation tutorials sprinkle `sleep(2)` everywhere, then break und
 - **Wait on the actual signal**: URL change, document ready, element visibility, network response, custom JS predicate.
 - **Pick the right tab**: `context.pages[0]` under CDP can return `RotateCookies`, service workers, or devtools targets. Always use `find_page()` with a predicate.
 - **Scope queries to a region**: pass a `Locator` (not a `Page`) for elements inside modals, where the same role+name appears elsewhere on the page.
-- **Snapshot in pairs**: every UI state worth saving is captured as `NN-slug.png` (visual) + `NN-slug.aria.yaml` (selectors). Reproducible and diff-friendly.
+- **Inspect YAML first**: `snap` saves the accessibility tree for navigation and form interactions. Add `--image` when visual evidence is needed; PNG and YAML share a numeric prefix for review.
 
 ## Installation
 
@@ -137,19 +138,19 @@ Each running instance is queried over CDP for its open tabs. If the instance ref
 web-view snap homepage --url-contains example.com --destination-dir ./captures
 ```
 
-You get `captures/01-homepage.png` + `captures/01-homepage.aria.yaml`. The PNG is for humans (review what you saw). The ARIA YAML is for selectors — it dumps the accessibility tree so you can find any element by `role` + accessible `name` without hunting for CSS selectors.
+By default this writes only `captures/01-homepage.aria.yaml` and prints its absolute path. The YAML exposes the accessibility tree for finding elements by `role` and accessible `name`. Use it first for navigation and forms without image analysis.
 
-The command prints the two absolute paths to stdout (PNG first, ARIA YAML second), so you can pipe them straight into other tools:
+Add `--image` for layout checks, visual content, or a screenshot requested by the user. This writes PNG and YAML with the same numeric prefix and prints PNG first, YAML second:
 
 ```bash
-$ web-view snap homepage --url-contains example.com
-/Users/you/captures/01-homepage.png
-/Users/you/captures/01-homepage.aria.yaml
+web-view snap homepage --image --url-contains example.com
+# /Users/you/captures/02-homepage.png
+# /Users/you/captures/02-homepage.aria.yaml
 
-$ web-view snap | head -1 | xargs open   # auto-slug + open the PNG
+web-view snap --image | head -1 | xargs open
 ```
 
-The slug is optional: `web-view snap` (no positional) writes `NN-snap.{png,aria.yaml}` using the next free index.
+The slug is optional: `web-view snap` writes `NN-snap.aria.yaml`. Both modes use the next free index across existing capture files. Scripts that previously expected two paths must now pass `--image`. The library's `cdp.dual_snapshot` continues to produce both files.
 
 ### 4. Click, fill, and press without leaving the shell
 
@@ -202,6 +203,30 @@ web-view stop --port 9222
 
 ---
 
+## Bundled agent skill
+
+Install the included skill for guided CDP browsing, YAML-first inspection, and web tests:
+
+```bash
+web-view install skill                         # Codex, global
+web-view install skill --agent claude --scope local
+web-view install skill --target ~/agent-skills --force
+```
+
+The default destination is `~/.codex/skills/web-view`; local scope uses `./.codex/skills/web-view`. Choosing Claude uses `.claude` instead. `--target` overrides agent/scope and names the parent skills directory. Existing directory symlinks are followed, so configuration can stay in a separate maintained directory. Existing skill files are protected unless `--force` is supplied; replacements retain `.bak` backups with numeric suffixes when necessary. Re-run the installer after upgrading to refresh the installed skill. New sessions can discover it automatically or invoke `$web-view` explicitly.
+
+Once installed, ask the agent to "open CDP" or "browse as a user and follow my instructions", or invoke `$web-view` explicitly. The skill guides the agent to open or reuse a visible Chrome, report its port, and wait for the next instruction. No initial URL is required, and the browser stays open between steps. Portuguese requests such as "abra o CDP" are also recognized.
+
+The agent reads YAML first and requests `snap --image` when layout, colors, overlap, clipping, or image/canvas content requires visual inspection. YAML does not capture every visual detail, so it cannot establish that a page looks correct. This workflow avoids sending unnecessary screenshots for image analysis.
+
+To update an existing installation after upgrading the CLI:
+
+```bash
+web-view install skill --force
+```
+
+The maintained skill source is `src/web_view/skill/` and is included in the Python wheel; installation does not fetch a skill from GitHub.
+
 ## CLI reference
 
 ```
@@ -213,7 +238,7 @@ web-view navigate --url URL [--port 9222] [--tab <index|substring> | --new-tab]
 web-view stop     [--port PORT]   # omit --port when exactly one instance is running
 web-view snap     [slug]          # slug defaults to "snap"
                   [--port 9222] [--url-contains STR] [--destination-dir DIR]
-                  [--no-frames]                   # top frame only (skip iframes)
+                  [--no-frames] [--image]         # YAML by default, optional PNG
 web-view do       <verb>          # click | fill | check | press | hover | dblclick |
                                   # right-click | scroll-into-view | upload | drag
                   [--role R --name N | --selector CSS]
@@ -233,11 +258,13 @@ web-view eval     --js EXPR        # run JS in a tab/frame, print result as JSON
                   [--frame F] [--tab T] [--port P]
 web-view download --url URL --out PATH             # fetch via browser cookies
                   [--port P]
+web-view install skill [--agent codex|claude] [--scope local|global]
+                       [--target DIR] [--force]
 ```
 
 `web-view navigate` reuses an existing CDP Chrome. Without `--tab` / `--new-tab` it targets the first non-helper tab (the same tab `start --url` would touch). `--tab` accepts either a 0-based index (negatives count from the end) or a URL substring; `--new-tab` opens a fresh tab instead. The two flags are mutually exclusive.
 
-`web-view snap` prints two absolute paths to stdout (PNG then ARIA YAML) so the call is composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, `navigate`, and every `do <verb>`.
+`web-view snap` prints one absolute YAML path by default. With `--image`, it prints two absolute paths (PNG then ARIA YAML), composable with `head`, `xargs`, etc. Missing pre-conditions (no CDP Chrome on the given port, multiple instances when `--port` is omitted) produce structured guidance on stderr instead of raw Playwright tracebacks — this applies to `snap`, `stop`, `navigate`, and every `do <verb>`.
 
 By default the ARIA YAML recurses into same-origin iframes: each `- iframe` leaf is expanded in place, with the child frame's accessibility tree inlined under the node and labelled with the frame URL. This makes content rendered inside an iframe (SCORM / HTML5 courses, embedded players) visible to the structured snapshot instead of stopping at a bare `- iframe`. Cross-origin frames are annotated `- iframe (cross-origin, not captured)` so the omission is explicit rather than silent. Pass `--no-frames` for the legacy top-frame-only output.
 
@@ -418,7 +445,7 @@ cdp.dump_network(recorder, Path("./captures/network.json"))
 | First arg is always the Playwright object | Never reads global state. Easy to test and compose. |
 | URLs as strings, predicates as `Callable[[str], bool]` | Predicates beat substring matches for anything non-trivial. |
 | Timeouts in seconds at the API boundary | Playwright uses ms internally; this converts. |
-| Snapshots are pairs (`.png` + `.aria.yaml`) | PNG for review, ARIA YAML for stable selectors. |
+| CLI snapshots default to ARIA YAML; `--image` adds PNG | Use YAML for accessible content and selectors; request images for visual checks. |
 | Element helpers accept `Page` OR `Locator` as `root` | Scope to a region for modal dialogs. |
 
 ### Anti-patterns and replacements
