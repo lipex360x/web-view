@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `eval --argument` passes a JSON value to a JavaScript function expression;
+  `cdp.evaluate` accepts the same optional argument.
+- `unique:<substring>` tab selectors reject ambiguous URL matches. `snap --tab`
+  accepts the same selectors as other tab-aware commands.
 - A bundled `web-view` agent skill for guided CDP browsing and YAML-first page inspection.
 - `web-view install skill` with Codex/Claude selection, local/global scope, explicit destination, and backup-preserving `--force` updates.
 

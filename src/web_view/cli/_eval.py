@@ -36,6 +36,11 @@ def handle(arguments: argparse.Namespace) -> int:
     expression = _resolve_expression(arguments)
     if expression is None:
         return 1
+    try:
+        argument = json.loads(arguments.argument) if arguments.argument is not None else None
+    except json.JSONDecodeError as error:
+        print(f"error: invalid --argument JSON: {error}", file=sys.stderr)
+        return 1
     with connected_tab(arguments.port, arguments.tab) as page:
         if page is None:
             return 1
@@ -43,7 +48,11 @@ def handle(arguments: argparse.Namespace) -> int:
         if root is None:
             print_no_frame_found(arguments.frame)
             return 1
-        result = cdp.evaluate(root, expression)
+        result = (
+            cdp.evaluate(root, expression, argument)
+            if arguments.argument is not None
+            else cdp.evaluate(root, expression)
+        )
     try:
         rendered = json.dumps(result)
     except TypeError:
@@ -58,6 +67,7 @@ Examples:
   web-view eval --js "document.title"
   web-view eval --js "[...document.querySelectorAll('video')].map(v => v.currentSrc)"
   web-view eval --js-file ./find-media.js --frame index_lms
+  web-view eval --js-file ./inspect.js --argument '{"selector":"button"}'
   echo "document.title" | web-view eval --js -
   cat ./find-media.js | web-view eval --js - --frame index_lms
 
@@ -65,6 +75,8 @@ The expression comes from exactly one source: `--js "<expr>"` inline,
 `--js -` to read it from stdin, or `--js-file <path>` to read it from a
 file (`--js` and `--js-file` are mutually exclusive). Multi-line scripts
 are easier to keep in a file or pipe in than to quote inline.
+Use `--argument` to pass a JSON value to a function expression. A tab selector
+of `unique:<substring>` requires exactly one URL match.
 
 The result is printed to stdout as JSON. A result that cannot be serialised
 to JSON prints a structured error to stderr and exits 1. `--frame` targets a
@@ -89,6 +101,11 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
         "--js-file",
         dest="javascript_file",
         help="read the JavaScript expression from a file (mutually exclusive with --js)",
+    )
+    parser.add_argument(
+        "--argument",
+        default=None,
+        help="JSON argument passed to a JavaScript function expression",
     )
     parser.add_argument(
         "--port",

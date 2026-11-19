@@ -43,7 +43,22 @@ def test_unique_tab_rejects_ambiguous_match(fake_cdp: dict[str, Any], capsys: An
 
 def test_unique_tab_selects_only_match(fake_cdp: dict[str, Any]) -> None:
     fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
-    target = make_fake_page(page_url="https://example.test/target")
+    target = make_fake_page(
+        page_url="https://example.test/target", aria_text="- text: selected target"
+    )
     fake_cdp["pages"] = [make_fake_page(page_url="https://other.test"), target]
     assert main(["eval", "--tab", "unique:example.test", "--js", "document.title"]) == 0
     assert fake_cdp["evaluate_calls"][0]["root"] is target
+
+
+def test_snap_supports_tab_selector(fake_cdp: dict[str, Any], tmp_path: Any) -> None:
+    fake_cdp["instances"] = [FakeInstance(pid=111, port=9222)]
+    target = make_fake_page(
+        page_url="https://example.test/target", aria_text="- text: selected target"
+    )
+    fake_cdp["pages"] = [make_fake_page(page_url="https://other.test"), target]
+    assert (
+        main(["snap", "check", "--tab", "unique:example.test", "--destination-dir", str(tmp_path)])
+        == 0
+    )
+    assert "selected target" in (tmp_path / "01-check.aria.yaml").read_text()

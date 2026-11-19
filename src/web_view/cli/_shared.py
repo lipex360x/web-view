@@ -23,6 +23,7 @@ def resolve_target_tab(context: Any, selector: str | None) -> Any:
     Selector forms (matching `web-view navigate --tab`):
       - `None` (default)   → first non-helper tab, falling back to `pages[0]`
       - integer string     → 0-based index (negatives count from the end)
+      - `unique:<text>`    → require exactly one URL substring match
       - any other string   → URL substring; first match wins
 
     Returns `None` if the selector cannot be resolved against the open tabs.
@@ -32,6 +33,17 @@ def resolve_target_tab(context: Any, selector: str | None) -> Any:
         if page is not None:
             return page
         return context.pages[0] if context.pages else None
+    if selector.startswith("unique:"):
+        matching = [
+            (index, page) for index, page in enumerate(context.pages) if selector[7:] in page.url
+        ]
+        if len(matching) > 1:
+            print(
+                f"Ambiguous tab selector {selector!r}; matching indices: "
+                + ", ".join(str(index) for index, _ in matching),
+                file=sys.stderr,
+            )
+        return matching[0][1] if len(matching) == 1 else None
     index = _parse_tab_index(selector)
     if index is not None:
         if not context.pages:
