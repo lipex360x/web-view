@@ -241,8 +241,10 @@ def _make_switch_to_tab(state: dict[str, Any]) -> Any:
 
 
 def _make_evaluate(state: dict[str, Any]) -> Any:
-    def fake_evaluate(root: Any, expression: str) -> Any:
-        state["evaluate_calls"].append({"root": root, "expression": expression})
+    def fake_evaluate(root: Any, expression: str, argument: Any = None) -> Any:
+        state["evaluate_calls"].append(
+            {"root": root, "expression": expression, "argument": argument}
+        )
         return state["evaluate_result"]
 
     return fake_evaluate

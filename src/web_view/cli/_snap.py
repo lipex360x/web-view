@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from .. import cdp
-from ._shared import resolve_single_port
+from ._shared import resolve_single_port, resolve_target_tab
 
 
 def handle(arguments: argparse.Namespace) -> int:
@@ -22,9 +22,15 @@ def handle(arguments: argparse.Namespace) -> int:
     destination_dir = Path(arguments.destination_dir).expanduser().resolve()
     destination_dir.mkdir(parents=True, exist_ok=True)
     with cdp.connect(port=target_port) as (_, context):
-        page = cdp.find_page(context, url_contains=arguments.url_contains)
+        page = (
+            resolve_target_tab(context, arguments.tab)
+            if arguments.tab is not None
+            else cdp.find_page(context, url_contains=arguments.url_contains)
+        )
         if page is None:
-            print(f"no tab containing {arguments.url_contains!r}", file=sys.stderr)
+            print(
+                f"no matching tab for {arguments.tab or arguments.url_contains!r}", file=sys.stderr
+            )
             return 1
         if arguments.image:
             image_path, aria_path = cdp.dual_snapshot(
@@ -48,6 +54,7 @@ Examples:
   web-view snap homepage                     # YAML only, explicit slug
   web-view snap homepage --image             # YAML plus PNG
   web-view snap login --url-contains login   # pick tab by URL substring
+  web-view snap login --tab unique:figma.com # require one matching tab
   web-view snap homepage --destination-dir ./captures
   web-view snap --no-frames                  # top frame only (skip iframes)
   web-view snap --port 9333                  # explicit port
@@ -92,10 +99,16 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
         default=None,
         help="CDP port (optional when exactly one CDP Chrome is running)",
     )
-    parser.add_argument(
+    tab_selection = parser.add_mutually_exclusive_group()
+    tab_selection.add_argument(
         "--url-contains",
         default="",
         help="substring to pick the tab (defaults to first non-helper tab)",
+    )
+    tab_selection.add_argument(
+        "--tab",
+        default=None,
+        help="target tab by index, URL substring, or unique:URL-substring",
     )
     parser.add_argument(
         "--destination-dir",
