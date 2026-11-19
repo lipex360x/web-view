@@ -34,6 +34,9 @@ def resolve_target_tab(context: Any, selector: str | None) -> Any:
             return page
         return context.pages[0] if context.pages else None
     if selector.startswith("unique:"):
+        if not selector[7:]:
+            print("A unique tab selector requires a nonempty URL substring.", file=sys.stderr)
+            return None
         matching = [
             (index, page) for index, page in enumerate(context.pages) if selector[7:] in page.url
         ]
@@ -131,6 +134,12 @@ def print_ambiguous_instances(instances: list[Any]) -> None:
 
 
 def print_no_tab_found(selector: str) -> None:
+    if selector.startswith("unique:"):
+        print(
+            "Could not resolve the unique tab selector. See open tabs: web-view list",
+            file=sys.stderr,
+        )
+        return
     print(
         f"No tab matched {selector!r}.\nSee open tabs: web-view list",
         file=sys.stderr,
