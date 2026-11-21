@@ -33,7 +33,7 @@ Most browser automation tutorials sprinkle `sleep(2)` everywhere, then break und
 - **Wait on the actual signal**: URL change, document ready, element visibility, network response, custom JS predicate.
 - **Pick the right tab**: `context.pages[0]` under CDP can return `RotateCookies`, service workers, or devtools targets. Always use `find_page()` with a predicate.
 - **Scope queries to a region**: pass a `Locator` (not a `Page`) for elements inside modals, where the same role+name appears elsewhere on the page.
-- **Inspect YAML first**: `snap` saves the accessibility tree for navigation and form interactions. Add `--image` when visual evidence is needed; PNG and YAML share a numeric prefix for review.
+- **Choose the right inspection**: `inspect` reads focused text, links, and fields directly; `snap` saves the accessibility tree for roles and states. Add `--image` when visual evidence is needed; PNG and YAML share a numeric prefix for review.
 
 ## Installation
 
@@ -152,6 +152,24 @@ web-view snap --image | head -1 | xargs open
 
 The slug is optional: `web-view snap` writes `NN-snap.aria.yaml`. Both modes use the next free index across existing capture files. Scripts that previously expected two paths must now pass `--image`. The library's `cdp.dual_snapshot` continues to produce both files.
 
+### Focused DOM inspection
+
+Read a specific page region directly as JSON, without creating a snapshot file:
+
+```bash
+web-view inspect --selector '#region-main' --text --links --tab unique:example.com
+web-view inspect --selector 'form' --fields --frame 0
+```
+
+Choose any combination of `--text`, `--links`, and `--fields`; omitting all three
+returns all categories. The default selector is `body`, and the first matching
+region is used. Links include their text and resolved URL. Fields include labels,
+identifiers, state, and file input restrictions, but never their values. Text
+and URLs can still contain sensitive information: scope and share the output
+carefully. `--frame auto` selects the top frame; use a frame index or URL to
+inspect a child frame. Missing regions and invalid CSS selectors return an error.
+For accessible roles and names use `snap`, and for visual information use an image.
+
 ### 4. Click, fill, and press without leaving the shell
 
 `web-view snap` emits selectors as `role + name` pairs in the YAML — `web-view do <verb>` speaks the same vocabulary, so the read-yaml → act loop never needs a Python REPL:
@@ -211,7 +229,7 @@ web-view stop --port 9222
 
 ## Bundled agent skill
 
-Install the included skill for guided CDP browsing, YAML-first inspection, and web tests:
+Install the included skill for guided CDP browsing, focused inspection, and web tests:
 
 ```bash
 web-view install skill                         # Codex, global
@@ -223,7 +241,7 @@ The default destination is `~/.codex/skills/web-view`; local scope uses `./.code
 
 Once installed, ask the agent to "open CDP" or "browse as a user and follow my instructions", or invoke `$web-view` explicitly. The skill guides the agent to open or reuse a visible Chrome, report its port, and wait for the next instruction. No initial URL is required, and the browser stays open between steps. Portuguese requests such as "abra o CDP" are also recognized.
 
-The agent reads YAML first and requests `snap --image` when layout, colors, overlap, clipping, or image/canvas content requires visual inspection. YAML does not capture every visual detail, so it cannot establish that a page looks correct. This workflow avoids sending unnecessary screenshots for image analysis.
+The agent uses focused DOM inspection or YAML as appropriate, and requests `snap --image` when layout, colors, overlap, clipping, or image/canvas content requires visual inspection. YAML does not capture every visual detail, so it cannot establish that a page looks correct. This workflow avoids sending unnecessary screenshots for image analysis.
 
 To update an existing installation after upgrading the CLI:
 
@@ -258,6 +276,8 @@ web-view tab      <verb>          # new | close | switch
                   close  --tab <index|substring>   # --tab required (destructive)
                   switch [--tab <index|substring>] # defaults to first non-helper tab
                   [--port P] [--quiet]
+web-view inspect  [--selector CSS] [--text] [--links] [--fields]
+                  [--frame F] [--tab T] [--port P] # JSON to stdout
 web-view eval     --js EXPR        # run JS in a tab/frame, print result as JSON
                   | --js -          # read the expression from stdin
                   | --js-file PATH  # read the expression from a file

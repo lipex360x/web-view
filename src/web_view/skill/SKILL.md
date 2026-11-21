@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.8.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.10.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -24,7 +24,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 
 1. Run `web-view list` to discover running instances and tabs. It reports PID, CDP port, profile directory, and tab URLs/titles. A `?` tab listing means enumeration failed, not that no tabs exist.
 2. Reuse an appropriate instance. If one must be created, `web-view start --port 9333` starts a detached Chrome; `--headless` is available for tasks that do not need a visible window. `--url` sets its initial page and `--window-size 1280x720` sets its initial window size. The default profile is persistent at `~/.cache/web-view/profile`; `--user-data-dir` selects another profile. Use distinct profiles for concurrent instances. Chrome remains running after the command exits.
-3. Navigate to the requested URL, capture the page as YAML, and inspect the relevant tree before choosing an interaction target. Request an image only when the task needs visual evidence.
+3. Navigate to the requested URL and inspect the relevant content. Use `inspect` for focused text, links, or fields; use `snap` when accessible roles and names are needed. Request an image only when the task needs visual evidence.
 4. Perform the requested action, then verify the expected page state. An interaction's success acknowledgment only proves the action completed; verify its effect with another snapshot or a focused JavaScript query.
 5. Report the observed outcome and useful capture paths. Preserve instances and tabs that were already present. Close only resources created for this task when cleanup is appropriate; keep a visible result open when the user needs to inspect it.
 
@@ -35,7 +35,7 @@ Use waits tied to observable state rather than fixed sleeps. Element actions nor
 - With exactly one CDP Chrome, `--port` is optional. With zero or multiple instances, commands requiring an instance fail and show guidance or candidate ports. Use an explicit port when several instances exist or isolation matters.
 - Most tab-aware commands accept `--tab`: a zero-based index, negative index counted from the end, or URL substring (first match wins). The default is the first non-helper tab. Verify the target rather than assuming the foreground tab is selected.
 - `navigate --new-tab` opens a new tab and is mutually exclusive with `--tab`.
-- `snap` uses **`--url-contains`**, not `--tab`, to select a tab.
+- `snap` accepts `--tab` or the older `--url-contains` (mutually exclusive). `unique:<substring>` requires exactly one matching tab.
 - Element actions support `--frame auto` (default): search the top frame and same-origin child frames, taking the first match. `--frame 0` selects the top frame; an index or URL substring selects a specific frame. `press` does not accept `--frame`.
 - `eval --frame auto` defaults to the top frame; it does not perform the element actions' automatic search. Select the frame explicitly when evaluating inside an iframe.
 - Snapshot YAML includes same-origin iframe trees by default. Cross-origin frames are annotated but their contents are not captured. `snap --no-frames` captures only the top frame's tree.
@@ -47,7 +47,16 @@ web-view navigate --url http://localhost:3000 --port 9333 --new-tab
 web-view snap initial-page --port 9333 --url-contains localhost:3000 --destination-dir /tmp/web-view-captures
 ```
 
-`snap` writes only `NN-<slug>.aria.yaml` by default and prints its absolute path. Read this YAML first for roles, accessible names, text, and exposed states. This is normally sufficient for guided browsing, forms, and checking accessible messages without image analysis. Inspect only the relevant portions of large trees.
+For focused inspection without a file, use:
+
+```bash
+web-view inspect --selector '#region-main' --text --links --port 9333 --tab unique:example.com
+web-view inspect --selector 'form' --fields --port 9333 --frame 0
+```
+
+The command prints JSON for the first matching region; omit the category flags to include text, links and fields. Fields do not include values. Text and link URLs may contain sensitive information, so scope results carefully. The default selector is `body`; `--frame auto` selects the top frame. Use `snap` when accessible roles, names or states are needed.
+
+`snap` writes only `NN-<slug>.aria.yaml` by default and prints its absolute path. Inspect relevant portions of large trees.
 
 Add `--image` when the user requests a screenshot or the task depends on layout, spacing, colors, overlap, clipping, image/canvas content, or information missing from the accessibility tree:
 
