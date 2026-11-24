@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. The format 
 
 - Action timeouts now return a concise error with the target and context instead
   of a traceback. Use `web-view do --debug <verb> ...` for full details.
+- Element action help now describes unique tab selection and timeout debugging.
 
 ### Changed
 

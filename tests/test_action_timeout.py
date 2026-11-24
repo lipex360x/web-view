@@ -16,6 +16,15 @@ def prepare_page(fake_cdp: dict[str, Any]) -> None:
     fake_cdp["pages"] = [make_fake_page(page_url="https://example.test")]
 
 
+@pytest.mark.parametrize("verb", ["click", "fill", "drag"])
+def test_action_help_explains_debug_and_unique_selector(capsys: Any, verb: str) -> None:
+    with pytest.raises(SystemExit) as result:
+        main(["do", verb, "--help"])
+    assert result.value.code == 0
+    output = capsys.readouterr().out
+    assert "--debug" in output and "unique:" in output
+
+
 def test_missing_target_reports_concise_timeout(
     fake_cdp: dict[str, Any], capsys: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
