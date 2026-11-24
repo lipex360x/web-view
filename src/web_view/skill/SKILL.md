@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.11.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.12.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -28,7 +28,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 4. Perform the requested action, then verify the expected page state. An interaction's success acknowledgment only proves the action completed. Use `state` for the current URL, title and document readiness, or inspect the relevant content to verify the action's effect.
 5. Report the observed outcome and useful capture paths. Preserve instances and tabs that were already present. Close only resources created for this task when cleanup is appropriate; keep a visible result open when the user needs to inspect it.
 
-Use waits tied to observable state rather than fixed sleeps. Element actions normally wait up to 15 seconds (`--timeout` adjusts this where supported). For asynchronous results, use a bounded sequence of focused state checks and stop with the observed failure if the expected state never appears. Do not blindly retry a submission that may already have succeeded.
+Use waits tied to observable state rather than fixed sleeps. `web-view wait --text 'Ready' --timeout 10` waits for the first matching visible text in the selected tab's top frame; use `--selector '.loading' --state hidden` to wait for an element to disappear, or `--url-contains '/destination'` for navigation. Hidden also succeeds when no element matches, so only use it when absence is meaningful. Text matching is case-insensitive and normalizes whitespace; URL matching is case-sensitive. Use `--tab` to target the correct tab. Element actions normally wait up to 15 seconds (`--timeout` adjusts this where supported). Do not blindly retry a submission that may already have succeeded.
 
 ## Instance, tab, and frame selection
 

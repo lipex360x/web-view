@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `web-view wait` waits for a URL substring or a visible/hidden element or text
+  in the selected tab, with a configurable timeout.
 - `web-view state` reports a selected page's URL, title and document readiness;
   `--text-limit` optionally includes a bounded visible text excerpt.
 - `eval --argument` passes a JSON value to a JavaScript function expression;

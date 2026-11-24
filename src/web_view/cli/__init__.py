@@ -26,6 +26,7 @@ from . import (
     _start,
     _stop,
     _tab,
+    _wait,
 )
 
 DESCRIPTION = "Drive Chrome over CDP. Run 'web-view <command> -h' for details."
@@ -73,6 +74,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _eval.register(subparsers)
     _inspect.register(subparsers)
     _page_state.register(subparsers)
+    _wait.register(subparsers)
     _download.register(subparsers)
     _install.register(subparsers)
     return parser
