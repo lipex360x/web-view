@@ -50,6 +50,11 @@ The user's instructions take precedence when a convention conflicts with them.
   it loops, stalls, or behaves unexpectedly. Report what was verified and any
   limitations. Correct defects in the open PR or create a separate issue when
   appropriate, then repeat independent validation for affected behavior.
+- Show each independent agent test in a clearly named, fresh tmux session in
+  iTerm so the user can watch. Before starting the next test, close the previous
+  test's iTerm window and tmux session after verifying they are no longer running
+  work. Never close unrelated terminal windows or sessions. Keep the new test's
+  scrollback separate so its actions can be reviewed easily.
 - Run the project's automated tests and quality checks as well. Independent
   browser validation complements those checks; it does not replace them.
 
