@@ -54,7 +54,7 @@ def add_addressing_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--name", help="accessible name of the target element")
     parser.add_argument(
         "--selector",
-        help="CSS selector (mutually exclusive with --role/--name)",
+        help="CSS selector (not :hidden); [hidden] matches elements with that attribute",
     )
 
 

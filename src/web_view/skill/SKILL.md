@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.12.3**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.12.4**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -70,6 +70,8 @@ web-view snap visual-check --image --port 9333 --destination-dir /tmp/web-view-c
 With `--image`, the command writes both `NN-<slug>.png` and `NN-<slug>.aria.yaml` with a shared prefix and prints absolute paths in PNG-then-YAML order. View the PNG with the available image-viewing tool only when visual inspection is needed. Use a descriptive kebab-case slug and an explicit destination appropriate to the project. Both modes share numbering, and iframe options apply to YAML in either mode. If the user requests YAML-only analysis, explain any visual uncertainty rather than silently loading an image.
 
 Prefer ARIA role/name targets taken from the current snapshot. Use CSS selectors when accessible targeting is missing or ambiguous. `--selector` is mutually exclusive with `--role`/`--name`. If an element is missing, check the selected tab, frame, and current page state before changing selectors.
+
+Use valid CSS for `--selector`: `:hidden` is not a CSS pseudo-class. `[hidden]` matches an element that actually has the `hidden` attribute; elements can also be hidden in other ways, so do not assume that selector matches every hidden element. Inspect the target and use a known selector. An accessibility snapshot may omit hidden elements.
 
 ## Interactions
 

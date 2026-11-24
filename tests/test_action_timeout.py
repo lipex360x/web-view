@@ -25,6 +25,13 @@ def test_action_help_explains_debug_and_unique_selector(capsys: Any, verb: str) 
     assert "--debug" in output and "unique:" in output
 
 
+def test_click_help_explains_css_hidden_selection(capsys: Any) -> None:
+    with pytest.raises(SystemExit):
+        main(["do", "click", "--help"])
+    output = capsys.readouterr().out
+    assert ":hidden" in output and "[hidden]" in output
+
+
 def test_missing_target_reports_concise_timeout(
     fake_cdp: dict[str, Any], capsys: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
