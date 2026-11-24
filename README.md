@@ -706,12 +706,6 @@ uv run pytest
 
 ---
 
-## Acknowledgements
-
-`web-view` was extracted from the [`claude-brain`](https://github.com/lipex360x/claude-brain) repo where it grew up driving the GCP Console headed-Chrome bootstrap for the GWS integration. The discipline of "wait on state, never on time" came from too many flaky `sleep(2)` debugging sessions on that flow.
-
-<div align="right"><a href="#contents">↑ Back to top</a></div>
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
