@@ -28,6 +28,8 @@ All notable changes to this project will be documented in this file. The format 
   privacy-safe backlog issues when scripts or workarounds are needed.
 - Clarified that agents report missing capabilities after using ad hoc scripts,
   including when the user's primary task succeeds.
+- Clarified when an existing inspection is sufficient and when to request a
+  timeout traceback, and documented navigation's available timeout options.
 - `web-view wait` waits for a URL substring or a visible/hidden element or text
   in the selected tab, with a configurable timeout.
 - `web-view state` reports a selected page's URL, title and document readiness;
