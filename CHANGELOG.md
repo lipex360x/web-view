@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file. The format 
 
 - The bundled skill asks agents to identify reusable tool gaps and suggest
   privacy-safe backlog issues when scripts or workarounds are needed.
+- Clarified that agents report missing capabilities after using ad hoc scripts,
+  including when the user's primary task succeeds.
 - `web-view wait` waits for a URL substring or a visible/hidden element or text
   in the selected tab, with a configurable timeout.
 - `web-view state` reports a selected page's URL, title and document readiness;
