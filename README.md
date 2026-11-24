@@ -166,6 +166,24 @@ visible text characters (maximum 10000); it may contain sensitive information.
 `readyState` describes the document, not whether an application has finished loading.
 Selection and navigation errors return a nonzero exit status.
 
+### Wait for a page condition
+
+```bash
+web-view wait --url-contains '/dashboard' --tab unique:example.com --timeout 20
+web-view wait --text 'Ready' --timeout 10
+web-view wait --selector '.loading' --state hidden --timeout 10
+```
+
+Choose exactly one condition. URL matching is a case-sensitive substring and
+returns when a matching navigation commits. Text uses Playwright's
+case-insensitive substring matching with normalized whitespace. Element and text
+conditions use the first match in the selected tab's top frame, without searching
+iframes; the default state is `visible`. `hidden` also succeeds immediately when
+the first match is absent, so use it only when absence is meaningful. A locator
+continues to follow the selected tab's top frame across navigation. The timeout
+is in seconds, defaults to 15, and must be between 0.001 and 86400. The command
+reports success, timeout, or an error and returns nonzero on failure.
+
 ### Focused DOM inspection
 
 Read a specific page region directly as JSON, without creating a snapshot file:
@@ -288,11 +306,14 @@ web-view resize   --width W --height H              # OS window (default)
 web-view tab      <verb>          # new | close | switch
                   new    [--url URL]               # opens about:blank by default
                   close  --tab <index|substring>   # --tab required (destructive)
-                  switch [--tab <index|substring>] # defaults to first non-helper tab
+                  switch [--tab <index|substring|unique:substring>]
+                                                   # defaults to first non-helper tab
                   [--port P] [--quiet]
 web-view inspect  [--selector CSS] [--text] [--links] [--fields]
                   [--frame F] [--tab T] [--port P] # JSON to stdout
 web-view state    [--text-limit N] [--tab T] [--port P] # page state as JSON
+web-view wait     (--url-contains TEXT | --selector CSS | --text TEXT)
+                  [--state visible|hidden] [--timeout S] [--tab T] [--port P]
 web-view eval     --js EXPR        # run JS in a tab/frame, print result as JSON
                   | --js -          # read the expression from stdin
                   | --js-file PATH  # read the expression from a file

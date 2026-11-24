@@ -10,7 +10,7 @@ from .._shared import print_no_tab_found, resolve_single_port, resolve_target_ta
 from ._shared import add_common_arguments, is_index_selector
 
 
-def _focus_by_index(context: Any, selector: str) -> Any:
+def _focus_by_selector(context: Any, selector: str) -> Any:
     page = resolve_target_tab(context, selector)
     if page is not None:
         page.bring_to_front()
@@ -39,8 +39,9 @@ def handle(arguments: argparse.Namespace) -> int:
     selector = arguments.tab
     with cdp.connect(port=target_port) as (_, context):
         page = (
-            _focus_by_index(context, selector)
-            if is_index_selector(selector)
+            _focus_by_selector(context, selector)
+            if selector is not None
+            and (is_index_selector(selector) or selector.startswith("unique:"))
             else _focus_by_url(context, selector)
         )
         if page is None:
@@ -61,6 +62,7 @@ Examples:
 Tab selection (defaults to the first non-helper tab when omitted):
   --tab N             by index (0-based; negatives count from the end)
   --tab <substring>   by URL substring (first match wins)
+  --tab unique:<substring>   require exactly one URL match
 """
 
 
@@ -74,7 +76,7 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     parser.add_argument(
         "--tab",
         default=None,
-        help="tab to focus: index (0-based, negatives allowed) or URL substring",
+        help="tab to focus: index, URL substring, or unique:<substring>",
     )
     add_common_arguments(parser)
     parser.set_defaults(func=handle)

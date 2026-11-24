@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 
+- `web-view tab switch` accepts `unique:<substring>` and rejects ambiguous matches.
 - `web-view snap` now generates only ARIA YAML by default. Pass `--image` to retain PNG + YAML output and the previous PNG-first stdout order. Both modes share capture numbering; `cdp.dual_snapshot` is unchanged.
 
 ### Development
@@ -14,6 +15,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `web-view wait` waits for a URL substring or a visible/hidden element or text
+  in the selected tab, with a configurable timeout.
 - `web-view state` reports a selected page's URL, title and document readiness;
   `--text-limit` optionally includes a bounded visible text excerpt.
 - `eval --argument` passes a JSON value to a JavaScript function expression;
