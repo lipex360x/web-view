@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.13.1**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.14.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -67,7 +67,9 @@ The command prints JSON for the first matching region; omit the category flags t
 
 For an element that may be absent from the accessibility tree, use `web-view inspect --selector 'button' --visibility --limit 20` to examine bounded visibility evidence for matching elements. Results include short text excerpts, the `hidden` attribute, computed styles and relevant ancestor evidence; input, textarea and select values are omitted. `rendered` describes a nonzero layout box and computed visibility, not every possible reason an element cannot be seen or clicked. Use the selected tab and frame, and scope output to avoid exposing unrelated content.
 
-`snap` writes only `NN-<slug>.aria.yaml` by default and prints its absolute path. Inspect relevant portions of large trees.
+Use `web-view snap --stdout` for an immediate accessibility tree without saving a file. Output is limited to 16000 characters by default; a truncation marker means the tree is incomplete and may not be valid YAML. Adjust with `--max-chars N` or explicitly request the complete tree with `--max-chars 0`. Use a saved snapshot when preserving evidence or inspecting a large tree selectively is more useful. `--stdout` cannot be combined with `--image`.
+
+Without `--stdout`, `snap` writes only `NN-<slug>.aria.yaml` by default and prints its absolute path. Inspect relevant portions of large trees.
 
 Add `--image` when the user requests a screenshot or the task depends on layout, spacing, colors, overlap, clipping, image/canvas content, or information missing from the accessibility tree:
 

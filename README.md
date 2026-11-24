@@ -152,6 +152,21 @@ web-view snap --image | head -1 | xargs open
 
 The slug is optional: `web-view snap` writes `NN-snap.aria.yaml`. Both modes use the next free index across existing capture files. Scripts that previously expected two paths must now pass `--image`. The library's `cdp.dual_snapshot` continues to produce both files.
 
+For a quick accessibility check without a saved artifact, use:
+
+```bash
+web-view snap --stdout --tab unique:example.com
+web-view snap --stdout --max-chars 0 --tab unique:example.com
+```
+
+Direct output is limited to 16000 characters by default. A truncated result is
+marked in stdout and stderr and may not be valid YAML; it must not be treated as
+the complete tree. Use `--max-chars N` for another limit, `0` for no limit, or
+omit `--stdout` to save a file that can be read selectively. `--stdout` cannot be
+combined with `--image`; the slug and `--destination-dir` only affect saved
+captures. Tab selection and `--no-frames` work in either mode. Output may contain
+sensitive page content.
+
 ### Page state
 
 Check the selected tab's current URL, title, and document readiness in one JSON result:
@@ -313,8 +328,8 @@ web-view list
 web-view navigate --url URL [--port 9222] [--tab <index|substring> | --new-tab]
 web-view stop     [--port PORT]   # omit --port when exactly one instance is running
 web-view snap     [slug]          # slug defaults to "snap"
-                  [--port 9222] [--url-contains STR] [--destination-dir DIR]
-                  [--no-frames] [--image]         # YAML by default, optional PNG
+                  [--port 9222] [--url-contains STR | --tab T] [--destination-dir DIR]
+                  [--no-frames] [--image | --stdout] [--max-chars N]
 web-view do       [--debug] <verb> # click | fill | check | press | hover | dblclick |
                                   # right-click | scroll-into-view | upload | drag
                   [--role R --name N | --selector CSS]
