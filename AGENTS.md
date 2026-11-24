@@ -9,6 +9,10 @@ The user's instructions take precedence when a convention conflicts with them.
 
 - Work on one issue at a time. Use a separate branch or worktree based on the
   current `main` and preserve existing work.
+- When a task ends, remove any worktrees created for it and clean up their Git
+  registrations. First verify that they are no longer in use and preserve any
+  uncommitted or otherwise unrecorded work. Keep branches when needed; do not
+  leave temporary worktree directories beside the main project.
 - Keep commits small and grouped by concern. Only create a commit when the user
   has authorized committing the current work; do not infer authorization from
   the preference for granular commits alone.
