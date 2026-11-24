@@ -80,7 +80,9 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
         help="target element as 'role:name'",
     )
     parser.add_argument("--port", type=int, default=None, help="CDP port (optional)")
-    parser.add_argument("--tab", default=None, help="target tab: index or URL substring")
+    parser.add_argument(
+        "--tab", default=None, help="target tab: index, URL substring, or unique:<substring>"
+    )
     parser.add_argument(
         "--frame",
         default="auto",
@@ -90,7 +92,7 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
         "--timeout",
         type=float,
         default=15.0,
-        help="upper bound in seconds for element waits (default 15)",
+        help="upper bound in seconds (default 15); use 'web-view do --debug drag' for details",
     )
     parser.add_argument("--quiet", "-q", action="store_true", help="suppress success ack on stdout")
     parser.set_defaults(func=handle)

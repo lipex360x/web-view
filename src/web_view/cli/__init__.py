@@ -83,6 +83,8 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     arguments = parser.parse_args(argv)
+    if arguments.command == "do":
+        return _do.run(arguments)
     return int(arguments.func(arguments))
 
 

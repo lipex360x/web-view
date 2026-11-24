@@ -27,7 +27,7 @@ def add_runtime_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--tab",
         default=None,
-        help="target tab: index (0-based, negatives allowed) or URL substring",
+        help="target tab: index, URL substring, or unique:<substring>",
     )
     parser.add_argument(
         "--frame",
@@ -38,7 +38,7 @@ def add_runtime_arguments(parser: argparse.ArgumentParser) -> None:
         "--timeout",
         type=float,
         default=DEFAULT_TIMEOUT_SECONDS,
-        help="upper bound in seconds for waiting on the element (default 15)",
+        help="upper bound in seconds (default 15); use 'web-view do --debug <verb>' for details",
     )
     parser.add_argument(
         "--quiet",
@@ -54,7 +54,7 @@ def add_addressing_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--name", help="accessible name of the target element")
     parser.add_argument(
         "--selector",
-        help="CSS selector (mutually exclusive with --role/--name)",
+        help="CSS selector (not :hidden); [hidden] matches elements with that attribute",
     )
 
 

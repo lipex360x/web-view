@@ -28,6 +28,27 @@ The user's instructions take precedence when a convention conflicts with them.
   independent Codex session that reads the installed web-view skill and a
   concrete test scenario. Give the session the intended behavior and success
   criteria without supplying implementation details that would bias its check.
+- Do not force a successful path by supplying the exact commands, selectors,
+  fixes, or workarounds an agent should discover. Give it the task, necessary
+  fixture access, safety boundaries, and expected outcome. Observe its choices;
+  a guided reproduction can diagnose a failure but does not validate that a
+  fresh session can independently complete the task.
+- Use natural user requests and give the agent freedom to explore, subject to
+  safety and time limits. Vary scenarios when practical and evaluate whether
+  guidance generalizes; do not tune the skill, help, implementation, or prompt
+  solely to pass a specific fixture or a prescribed sequence of actions.
+- Evaluate improvements against varied cases, including situations where the
+  first inspection is sufficient, further investigation is justified,
+  JavaScript is useful, or available evidence cannot establish a cause. Judge
+  correctness, safety, and effort in context rather than rewarding a fixed
+  command sequence or treating every additional inspection as waste.
+- Treat isolated successful runs as evidence for the tested situations, not
+  proof of general improvement. Prefer broadly useful changes over instructions
+  tailored to one observed failure; retain meaningful uncertainty in reports.
+- When an agent takes an unproductive or invalid path, determine whether the
+  skill, CLI help, or implementation needs improvement. Make the appropriate
+  changes and repeat the original scenario in a new session without embedding
+  the discovered solution in its instructions. Report unresolved limitations.
 - Run the relevant scenario in a visible Chrome session, using the updated local
   CLI and skill. Reproduce the original motivation where practical and safe;
   include success, failure, and timeout or ambiguity cases when applicable.
@@ -37,6 +58,11 @@ The user's instructions take precedence when a convention conflicts with them.
   it loops, stalls, or behaves unexpectedly. Report what was verified and any
   limitations. Correct defects in the open PR or create a separate issue when
   appropriate, then repeat independent validation for affected behavior.
+- Show each independent agent test in a clearly named, fresh tmux session in
+  iTerm so the user can watch. Before starting the next test, close the previous
+  test's iTerm window and tmux session after verifying they are no longer running
+  work. Never close unrelated terminal windows or sessions. Keep the new test's
+  scrollback separate so its actions can be reviewed easily.
 - Run the project's automated tests and quality checks as well. Independent
   browser validation complements those checks; it does not replace them.
 

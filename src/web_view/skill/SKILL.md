@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.12.1**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.13.1**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -29,6 +29,12 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 5. Report the observed outcome and useful capture paths. Preserve instances and tabs that were already present. Close only resources created for this task when cleanup is appropriate; keep a visible result open when the user needs to inspect it.
 
 Use waits tied to observable state rather than fixed sleeps. `web-view wait --text 'Ready' --timeout 10` waits for the first matching visible text in the selected tab's top frame; use `--selector '.loading' --state hidden` to wait for an element to disappear, or `--url-contains '/destination'` for navigation. Hidden also succeeds when no element matches, so only use it when absence is meaningful. Text matching is case-insensitive and normalizes whitespace; URL matching is case-sensitive. Use `--tab` to target the correct tab. Element actions normally wait up to 15 seconds (`--timeout` adjusts this where supported). Do not blindly retry a submission that may already have succeeded.
+
+Use the evidence already obtained: if a focused inspection answers the user's question, report the finding instead of repeating the same check with JavaScript or a full traceback. `navigate` does not accept `--timeout`; consult its help for available options when needed.
+
+## Notice tool gaps
+
+While completing the user's task, also evaluate whether web-view supports the workflow efficiently. You may use JavaScript when needed; it is not prohibited. Whenever you write an ad hoc JavaScript query or script because a web-view command does not provide the needed information, explicitly tell the user what capability was missing, even if the main task succeeds. Suggest a backlog issue if the need could recur; distinguish an observed limitation from a confirmed general product defect. Do the same for confusing failures or workarounds that could affect future sessions. Do not omit this observation just because the user's request did not ask for a tool review. Explain a generic reproduction and expected behavior without exposing private project names, URLs, data, or screenshots. Check for existing issues before creating one, and follow the user's authorization and project instructions for external writes. Review skill guidance, README, version, and relevant CLI help as part of any proposed implementation. Avoid treating a one-off site-specific need as proof that every page needs the same feature.
 
 ## Instance, tab, and frame selection
 
@@ -59,6 +65,8 @@ web-view inspect --selector 'form' --fields --port 9333 --frame 0
 
 The command prints JSON for the first matching region; omit the category flags to include text, links and fields. Fields do not include values. Text and link URLs may contain sensitive information, so scope results carefully. The default selector is `body`; `--frame auto` selects the top frame. Use `snap` when accessible roles, names or states are needed.
 
+For an element that may be absent from the accessibility tree, use `web-view inspect --selector 'button' --visibility --limit 20` to examine bounded visibility evidence for matching elements. Results include short text excerpts, the `hidden` attribute, computed styles and relevant ancestor evidence; input, textarea and select values are omitted. `rendered` describes a nonzero layout box and computed visibility, not every possible reason an element cannot be seen or clicked. Use the selected tab and frame, and scope output to avoid exposing unrelated content.
+
 `snap` writes only `NN-<slug>.aria.yaml` by default and prints its absolute path. Inspect relevant portions of large trees.
 
 Add `--image` when the user requests a screenshot or the task depends on layout, spacing, colors, overlap, clipping, image/canvas content, or information missing from the accessibility tree:
@@ -70,6 +78,8 @@ web-view snap visual-check --image --port 9333 --destination-dir /tmp/web-view-c
 With `--image`, the command writes both `NN-<slug>.png` and `NN-<slug>.aria.yaml` with a shared prefix and prints absolute paths in PNG-then-YAML order. View the PNG with the available image-viewing tool only when visual inspection is needed. Use a descriptive kebab-case slug and an explicit destination appropriate to the project. Both modes share numbering, and iframe options apply to YAML in either mode. If the user requests YAML-only analysis, explain any visual uncertainty rather than silently loading an image.
 
 Prefer ARIA role/name targets taken from the current snapshot. Use CSS selectors when accessible targeting is missing or ambiguous. `--selector` is mutually exclusive with `--role`/`--name`. If an element is missing, check the selected tab, frame, and current page state before changing selectors.
+
+Use valid CSS for `--selector`: `:hidden` is not a CSS pseudo-class. `[hidden]` matches an element that actually has the `hidden` attribute; elements can also be hidden in other ways, so do not assume that selector matches every hidden element. Inspect the target and use a known selector. An accessibility snapshot may omit hidden elements.
 
 ## Interactions
 
@@ -83,6 +93,8 @@ web-view do scroll-into-view --selector "#footer" --port 9333
 ```
 
 Other available verbs are `dblclick`, `right-click`, `upload`, and `drag`; read their per-verb help when needed for additional arguments. Common element-action options include `--port`, `--tab`, `--frame`, `--timeout`, and `--quiet`/`-q`. `scroll-into-view` ignores the timeout option; `press` and `drag` have different targeting arguments from ordinary element actions.
+
+Action timeouts return a concise error and nonzero status. Use that result first; request the full traceback only when it is needed to diagnose the problem. For the full traceback and Playwright call log, put `--debug` before the verb, for example `web-view do --debug click --role button --name Missing --timeout 1`. Unexpected errors still show their traceback.
 
 `fill --value` supplies text inline. Omitting it reads stdin until EOF, which is useful for multiline content. `press --keys` takes comma-separated keystrokes with `+` for chords, such as `"Control+a,Backspace"` or macOS `"Meta+a,Backspace"`. Keyboard actions affect the focused element, so establish focus first when necessary.
 
