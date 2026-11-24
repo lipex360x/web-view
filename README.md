@@ -202,6 +202,24 @@ carefully. `--frame auto` selects the top frame; use a frame index or URL to
 inspect a child frame. Missing regions and invalid CSS selectors return an error.
 For accessible roles and names use `snap`, and for visual information use an image.
 
+To investigate elements that may be absent from the accessibility tree, request
+visibility evidence for all elements matching a CSS selector:
+
+```bash
+web-view inspect --selector 'button' --visibility --limit 20 --tab unique:example.com
+```
+
+This reports the total match count and up to 20 matches by default (maximum 100),
+including text excerpts, the `hidden` attribute, computed `display`, `visibility`
+and `opacity`, layout presence, and up to eight ancestors with relevant hiding
+evidence. It does not return input, textarea, or select values. Text may contain
+sensitive information. `rendered` means a nonzero layout box and non-hidden
+computed visibility; it does not account for opacity, clipping, overlays, or every
+reason an element might be impossible to see or click. The evidence is not a
+complete visual or interaction test. A missing or invalid selector is an error.
+When combined with other categories, those categories still inspect only the
+first match; visibility inspects multiple matches in the selected frame.
+
 ### 4. Click, fill, and press without leaving the shell
 
 `web-view snap` emits selectors as `role + name` pairs in the YAML — `web-view do <verb>` speaks the same vocabulary, so the read-yaml → act loop never needs a Python REPL:
@@ -311,7 +329,7 @@ web-view tab      <verb>          # new | close | switch
                   switch [--tab <index|substring|unique:substring>]
                                                    # defaults to first non-helper tab
                   [--port P] [--quiet]
-web-view inspect  [--selector CSS] [--text] [--links] [--fields]
+web-view inspect  [--selector CSS] [--text] [--links] [--fields] [--visibility] [--limit N]
                   [--frame F] [--tab T] [--port P] # JSON to stdout
 web-view state    [--text-limit N] [--tab T] [--port P] # page state as JSON
 web-view wait     (--url-contains TEXT | --selector CSS | --text TEXT)

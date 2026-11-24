@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `inspect --visibility` reports bounded visibility evidence for matching DOM
+  elements, including hidden elements and relevant ancestor styles.
 - The bundled skill asks agents to identify reusable tool gaps and suggest
   privacy-safe backlog issues when scripts or workarounds are needed.
 - Clarified that agents report missing capabilities after using ad hoc scripts,
