@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `snap --stdout` prints a bounded accessibility snapshot without saving a file;
+  `--max-chars` changes the limit or explicitly requests the complete tree.
 - `inspect --visibility` reports bounded visibility evidence for matching DOM
   elements, including hidden elements and relevant ancestor styles.
 - The bundled skill asks agents to identify reusable tool gaps and suggest

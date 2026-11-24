@@ -10,8 +10,32 @@ from pathlib import Path
 from .. import cdp
 from ._shared import resolve_single_port, resolve_target_tab
 
+_DEFAULT_MAX_CHARS = 16000
+
+
+def _nonnegative(value: str) -> int:
+    try:
+        limit = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("max-chars must be a non-negative integer") from error
+    if limit < 0:
+        raise argparse.ArgumentTypeError("max-chars must be a non-negative integer")
+    return limit
+
+
+def _print_snapshot(snapshot: str, limit: int) -> None:
+    if limit and len(snapshot) > limit:
+        print(snapshot[:limit])
+        print("# Snapshot truncated; use --max-chars 0 or capture to a file for the complete tree.")
+        print("warning: snapshot truncated; output is incomplete", file=sys.stderr)
+        return
+    print(snapshot)
+
 
 def handle(arguments: argparse.Namespace) -> int:
+    if arguments.max_chars is not None and not arguments.stdout:
+        print("error: --max-chars requires --stdout", file=sys.stderr)
+        return 1
     target_port = resolve_single_port(arguments.port)
     if target_port is None:
         return 1
@@ -19,8 +43,6 @@ def handle(arguments: argparse.Namespace) -> int:
     if not safe_slug:
         print("slug must contain at least one alphanumeric char", file=sys.stderr)
         return 1
-    destination_dir = Path(arguments.destination_dir).expanduser().resolve()
-    destination_dir.mkdir(parents=True, exist_ok=True)
     with cdp.connect(port=target_port) as (_, context):
         page = (
             resolve_target_tab(context, arguments.tab)
@@ -32,6 +54,13 @@ def handle(arguments: argparse.Namespace) -> int:
                 f"no matching tab for {arguments.tab or arguments.url_contains!r}", file=sys.stderr
             )
             return 1
+        if arguments.stdout:
+            snapshot = cdp.aria_snapshot(page, include_frames=arguments.include_frames)
+            limit = arguments.max_chars if arguments.max_chars is not None else _DEFAULT_MAX_CHARS
+            _print_snapshot(snapshot, limit)
+            return 0
+        destination_dir = Path(arguments.destination_dir).expanduser().resolve()
+        destination_dir.mkdir(parents=True, exist_ok=True)
         if arguments.image:
             image_path, aria_path = cdp.dual_snapshot(
                 page,
@@ -71,6 +100,11 @@ Port selection (same rule as `web-view stop` / `web-view navigate`):
 
 Output:
   Default: write NN-<slug>.aria.yaml and print its absolute path.
+  --stdout: print the YAML directly, without creating files. Output is limited
+  to 16000 characters by default; truncation is marked. Use --max-chars 0
+  for the full tree, or omit --stdout to save it to a file. Truncated output
+  is incomplete and may not be valid YAML. Slug and --destination-dir apply
+  only to saved captures; --stdout cannot be combined with --image.
   With --image: write both NN-<slug>.png and NN-<slug>.aria.yaml,
   printing the PNG path first, then the YAML path. NN is the next free
   integer in the destination directory across both capture types.
@@ -121,9 +155,19 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
         action="store_false",
         help="capture the top frame only (do not recurse into same-origin iframes)",
     )
-    parser.add_argument(
+    output_mode = parser.add_mutually_exclusive_group()
+    output_mode.add_argument(
         "--image",
         action="store_true",
         help="also save a PNG screenshot (default: ARIA YAML only)",
+    )
+    output_mode.add_argument(
+        "--stdout", action="store_true", help="print bounded YAML directly without creating files"
+    )
+    parser.add_argument(
+        "--max-chars",
+        type=_nonnegative,
+        default=None,
+        help="stdout character limit (default 16000; 0 means unlimited)",
     )
     parser.set_defaults(func=handle, include_frames=True)
