@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.10.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.11.0**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -25,7 +25,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 1. Run `web-view list` to discover running instances and tabs. It reports PID, CDP port, profile directory, and tab URLs/titles. A `?` tab listing means enumeration failed, not that no tabs exist.
 2. Reuse an appropriate instance. If one must be created, `web-view start --port 9333` starts a detached Chrome; `--headless` is available for tasks that do not need a visible window. `--url` sets its initial page and `--window-size 1280x720` sets its initial window size. The default profile is persistent at `~/.cache/web-view/profile`; `--user-data-dir` selects another profile. Use distinct profiles for concurrent instances. Chrome remains running after the command exits.
 3. Navigate to the requested URL and inspect the relevant content. Use `inspect` for focused text, links, or fields; use `snap` when accessible roles and names are needed. Request an image only when the task needs visual evidence.
-4. Perform the requested action, then verify the expected page state. An interaction's success acknowledgment only proves the action completed; verify its effect with another snapshot or a focused JavaScript query.
+4. Perform the requested action, then verify the expected page state. An interaction's success acknowledgment only proves the action completed. Use `state` for the current URL, title and document readiness, or inspect the relevant content to verify the action's effect.
 5. Report the observed outcome and useful capture paths. Preserve instances and tabs that were already present. Close only resources created for this task when cleanup is appropriate; keep a visible result open when the user needs to inspect it.
 
 Use waits tied to observable state rather than fixed sleeps. Element actions normally wait up to 15 seconds (`--timeout` adjusts this where supported). For asynchronous results, use a bounded sequence of focused state checks and stop with the observed failure if the expected state never appears. Do not blindly retry a submission that may already have succeeded.
@@ -41,6 +41,8 @@ Use waits tied to observable state rather than fixed sleeps. Element actions nor
 - Snapshot YAML includes same-origin iframe trees by default. Cross-origin frames are annotated but their contents are not captured. `snap --no-frames` captures only the top frame's tree.
 
 ## Capture and inspect
+
+Use `web-view state --tab unique:example.com` to check URL, title and document readiness together. Add `--text-limit 200` only when a short visible text excerpt is needed; it may contain sensitive information. Document readiness does not prove an application has finished loading.
 
 ```bash
 web-view navigate --url http://localhost:3000 --port 9333 --new-tab

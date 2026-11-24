@@ -152,6 +152,20 @@ web-view snap --image | head -1 | xargs open
 
 The slug is optional: `web-view snap` writes `NN-snap.aria.yaml`. Both modes use the next free index across existing capture files. Scripts that previously expected two paths must now pass `--image`. The library's `cdp.dual_snapshot` continues to produce both files.
 
+### Page state
+
+Check the selected tab's current URL, title, and document readiness in one JSON result:
+
+```bash
+web-view state --tab unique:example.com
+web-view state --tab unique:example.com --text-limit 200
+```
+
+Text is omitted by default. `--text-limit` includes up to the requested number of
+visible text characters (maximum 10000); it may contain sensitive information.
+`readyState` describes the document, not whether an application has finished loading.
+Selection and navigation errors return a nonzero exit status.
+
 ### Focused DOM inspection
 
 Read a specific page region directly as JSON, without creating a snapshot file:
@@ -278,6 +292,7 @@ web-view tab      <verb>          # new | close | switch
                   [--port P] [--quiet]
 web-view inspect  [--selector CSS] [--text] [--links] [--fields]
                   [--frame F] [--tab T] [--port P] # JSON to stdout
+web-view state    [--text-limit N] [--tab T] [--port P] # page state as JSON
 web-view eval     --js EXPR        # run JS in a tab/frame, print result as JSON
                   | --js -          # read the expression from stdin
                   | --js-file PATH  # read the expression from a file
