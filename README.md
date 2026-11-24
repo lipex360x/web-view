@@ -306,7 +306,8 @@ web-view resize   --width W --height H              # OS window (default)
 web-view tab      <verb>          # new | close | switch
                   new    [--url URL]               # opens about:blank by default
                   close  --tab <index|substring>   # --tab required (destructive)
-                  switch [--tab <index|substring>] # defaults to first non-helper tab
+                  switch [--tab <index|substring|unique:substring>]
+                                                   # defaults to first non-helper tab
                   [--port P] [--quiet]
 web-view inspect  [--selector CSS] [--text] [--links] [--fields]
                   [--frame F] [--tab T] [--port P] # JSON to stdout

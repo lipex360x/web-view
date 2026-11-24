@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 
+- `web-view tab switch` accepts `unique:<substring>` and rejects ambiguous matches.
 - `web-view snap` now generates only ARIA YAML by default. Pass `--image` to retain PNG + YAML output and the previous PNG-first stdout order. Both modes share capture numbering; `cdp.dual_snapshot` is unchanged.
 
 ### Development

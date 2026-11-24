@@ -36,6 +36,7 @@ Use waits tied to observable state rather than fixed sleeps. `web-view wait --te
 - Most tab-aware commands accept `--tab`: a zero-based index, negative index counted from the end, or URL substring (first match wins). The default is the first non-helper tab. Verify the target rather than assuming the foreground tab is selected.
 - `navigate --new-tab` opens a new tab and is mutually exclusive with `--tab`.
 - `snap` accepts `--tab` or the older `--url-contains` (mutually exclusive). `unique:<substring>` requires exactly one matching tab.
+- `tab switch --tab unique:<substring>` also requires exactly one match before focusing a tab.
 - Element actions support `--frame auto` (default): search the top frame and same-origin child frames, taking the first match. `--frame 0` selects the top frame; an index or URL substring selects a specific frame. `press` does not accept `--frame`.
 - `eval --frame auto` defaults to the top frame; it does not perform the element actions' automatic search. Select the frame explicitly when evaluating inside an iframe.
 - Snapshot YAML includes same-origin iframe trees by default. Cross-origin frames are annotated but their contents are not captured. `snap --no-frames` captures only the top frame's tree.
