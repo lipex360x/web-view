@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `web-view state` reports a selected page's URL, title and document readiness;
+  `--text-limit` optionally includes a bounded visible text excerpt.
 - `eval --argument` passes a JSON value to a JavaScript function expression;
   `cdp.evaluate` accepts the same optional argument.
 - `unique:<substring>` tab selectors reject ambiguous URL matches. `snap --tab`

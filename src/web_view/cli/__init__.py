@@ -20,6 +20,7 @@ from . import (
     _install,
     _list,
     _navigate,
+    _page_state,
     _resize,
     _snap,
     _start,
@@ -71,6 +72,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _tab.register(subparsers)
     _eval.register(subparsers)
     _inspect.register(subparsers)
+    _page_state.register(subparsers)
     _download.register(subparsers)
     _install.register(subparsers)
     return parser
