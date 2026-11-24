@@ -16,7 +16,7 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 ## Local installation
 
 - Executable: `/Users/lipex360/.local/bin/web-view`. Examples below use `web-view`; use the absolute path if PATH does not resolve it.
-- This guide was checked against version **0.12.4**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
+- This guide was checked against version **0.12.5**. Do not run help for every new conversation or every routine command. Consult `web-view <command> -h` (or `web-view do <verb> -h`) for an unfamiliar option, a syntax error, or a version mismatch. Use `web-view --version` when investigating compatibility.
 - Install the bundled skill with `web-view install skill` (Codex, global by default). Use `--agent claude`, `--scope local`, or `--target <parent-skills-directory>` when needed. Re-run with `--force` after upgrading to refresh an installed copy; existing files are backed up. Maintain this skill in the web-view repository at `src/web_view/skill/`; installed copies are snapshots.
 - CLI installation uses a uv tool environment. Python imports in another interpreter are not automatically available. Prefer the CLI for browser tasks; do not install dependencies just to reproduce CLI functionality.
 
@@ -29,6 +29,10 @@ For guided browsing, list existing instances first, then reuse a suitable visibl
 5. Report the observed outcome and useful capture paths. Preserve instances and tabs that were already present. Close only resources created for this task when cleanup is appropriate; keep a visible result open when the user needs to inspect it.
 
 Use waits tied to observable state rather than fixed sleeps. `web-view wait --text 'Ready' --timeout 10` waits for the first matching visible text in the selected tab's top frame; use `--selector '.loading' --state hidden` to wait for an element to disappear, or `--url-contains '/destination'` for navigation. Hidden also succeeds when no element matches, so only use it when absence is meaningful. Text matching is case-insensitive and normalizes whitespace; URL matching is case-sensitive. Use `--tab` to target the correct tab. Element actions normally wait up to 15 seconds (`--timeout` adjusts this where supported). Do not blindly retry a submission that may already have succeeded.
+
+## Notice tool gaps
+
+While completing the user's task, also evaluate whether web-view supports the workflow efficiently. If you need to write a standalone JavaScript query or script, or encounter a confusing failure or workaround, identify the missing capability and consider it a potential tool improvement. You may still use a focused query when needed to complete the task; report the observed limitation and suggest a backlog issue when the capability would be reusable. Explain a generic reproduction and the expected behavior, without exposing private project names, URLs, data, or screenshots. Check for existing issues before creating one, and follow the user's authorization and project instructions for external writes. Review skill guidance, README, version, and relevant CLI help as part of any proposed implementation. Avoid treating a one-off site-specific need as proof that every page needs the same feature.
 
 ## Instance, tab, and frame selection
 

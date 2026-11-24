@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- The bundled skill asks agents to identify reusable tool gaps and suggest
+  privacy-safe backlog issues when scripts or workarounds are needed.
 - `web-view wait` waits for a URL substring or a visible/hidden element or text
   in the selected tab, with a configurable timeout.
 - `web-view state` reports a selected page's URL, title and document readiness;
