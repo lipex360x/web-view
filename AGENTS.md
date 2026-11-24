@@ -37,6 +37,14 @@ The user's instructions take precedence when a convention conflicts with them.
   safety and time limits. Vary scenarios when practical and evaluate whether
   guidance generalizes; do not tune the skill, help, implementation, or prompt
   solely to pass a specific fixture or a prescribed sequence of actions.
+- Evaluate improvements against varied cases, including situations where the
+  first inspection is sufficient, further investigation is justified,
+  JavaScript is useful, or available evidence cannot establish a cause. Judge
+  correctness, safety, and effort in context rather than rewarding a fixed
+  command sequence or treating every additional inspection as waste.
+- Treat isolated successful runs as evidence for the tested situations, not
+  proof of general improvement. Prefer broadly useful changes over instructions
+  tailored to one observed failure; retain meaningful uncertainty in reports.
 - When an agent takes an unproductive or invalid path, determine whether the
   skill, CLI help, or implementation needs improvement. Make the appropriate
   changes and repeat the original scenario in a new session without embedding
