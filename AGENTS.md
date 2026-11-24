@@ -28,6 +28,15 @@ The user's instructions take precedence when a convention conflicts with them.
   independent Codex session that reads the installed web-view skill and a
   concrete test scenario. Give the session the intended behavior and success
   criteria without supplying implementation details that would bias its check.
+- Do not force a successful path by supplying the exact commands, selectors,
+  fixes, or workarounds an agent should discover. Give it the task, necessary
+  fixture access, safety boundaries, and expected outcome. Observe its choices;
+  a guided reproduction can diagnose a failure but does not validate that a
+  fresh session can independently complete the task.
+- When an agent takes an unproductive or invalid path, determine whether the
+  skill, CLI help, or implementation needs improvement. Make the appropriate
+  changes and repeat the original scenario in a new session without embedding
+  the discovered solution in its instructions. Report unresolved limitations.
 - Run the relevant scenario in a visible Chrome session, using the updated local
   CLI and skill. Reproduce the original motivation where practical and safe;
   include success, failure, and timeout or ambiguity cases when applicable.
