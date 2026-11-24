@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Fixed
+
+- Action timeouts now return a concise error with the target and context instead
+  of a traceback. Use `web-view do --debug <verb> ...` for full details.
+
 ### Changed
 
 - `web-view tab switch` accepts `unique:<substring>` and rejects ambiguous matches.

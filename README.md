@@ -215,7 +215,9 @@ web-view do click --role button --name "Sign in"
 web-view snap after-login                                 # captures the new state
 ```
 
-Every interaction verb (`click`, `fill`, `check`, `press`, `hover`, `dblclick`, `right-click`, `scroll-into-view`, `upload`, `drag`) accepts the same options: `--port`/`--tab` for instance + tab targeting, `--timeout` for the upper bound on element waits, `--quiet`/`-q` to silence the one-line success ack. CSS-first workflows use `--selector <css>` instead of `--role/--name`. See `web-view do -h` for the verb list and `web-view do <verb> -h` for per-command details.
+Interaction verbs accept `--port` and `--tab` for targeting and `--quiet` to silence the success acknowledgment. Element actions support `--timeout` where applicable; check per-verb help for exceptions. CSS-first workflows use `--selector <css>` instead of `--role/--name`. See `web-view do -h` for the verb list and `web-view do <verb> -h` for details.
+
+An action timeout returns a nonzero exit status and a concise message with its target and context. To see the full traceback and Playwright call log, place `--debug` before the verb: `web-view do --debug click --role button --name Missing --timeout 1`. Unexpected errors retain their traceback.
 
 ### 5. Open, snapshot, and close tabs
 
@@ -295,7 +297,7 @@ web-view stop     [--port PORT]   # omit --port when exactly one instance is run
 web-view snap     [slug]          # slug defaults to "snap"
                   [--port 9222] [--url-contains STR] [--destination-dir DIR]
                   [--no-frames] [--image]         # YAML by default, optional PNG
-web-view do       <verb>          # click | fill | check | press | hover | dblclick |
+web-view do       [--debug] <verb> # click | fill | check | press | hover | dblclick |
                                   # right-click | scroll-into-view | upload | drag
                   [--role R --name N | --selector CSS]
                   [--port P] [--tab T] [--frame F] [--timeout S] [--quiet]
