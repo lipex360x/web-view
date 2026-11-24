@@ -33,6 +33,10 @@ The user's instructions take precedence when a convention conflicts with them.
   fixture access, safety boundaries, and expected outcome. Observe its choices;
   a guided reproduction can diagnose a failure but does not validate that a
   fresh session can independently complete the task.
+- Use natural user requests and give the agent freedom to explore, subject to
+  safety and time limits. Vary scenarios when practical and evaluate whether
+  guidance generalizes; do not tune the skill, help, implementation, or prompt
+  solely to pass a specific fixture or a prescribed sequence of actions.
 - When an agent takes an unproductive or invalid path, determine whether the
   skill, CLI help, or implementation needs improvement. Make the appropriate
   changes and repeat the original scenario in a new session without embedding
