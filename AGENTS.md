@@ -26,6 +26,56 @@ The user's instructions take precedence when a convention conflicts with them.
   appropriate. Track unrelated defects in separate issues after checking for
   duplicates; do not expand the implementation scope without authorization.
 
+## Delegated development pilot
+
+This is a pilot workflow. Expect to refine the briefing, handoff, and validation
+as evidence from more issues shows where the process can save time or tokens
+while maintaining quality.
+
+- When using this workflow, the coordinating agent briefs a fresh Codex CLI
+  session running GPT-6.1 Terra at `high` effort. Run it in a clearly named tmux
+  session visible in iTerm, on an isolated worktree based on the current `main`.
+  Give it the GitHub issue to read, the project rules, and only the extra context
+  it needs to implement and verify the requested scope. The development agent
+  owns the implementation and runs the project's pinned quality checks before
+  handing it off.
+- Keep one development tmux session, pane, and iTerm window for the issue. Run
+  the initial turn with `codex exec --json`, record its exact thread ID, and
+  keep the pane after the process exits (`remain-on-exit`). For a correction,
+  use `tmux respawn-pane` on that pane with `codex exec resume <thread-id>` in
+  the same worktree. Keep the same model and effort, give it only the new
+  evidence and requested correction, and record each turn separately. Check
+  that the previous turn has ended before resuming it. Start a new development
+  thread only when the original cannot be resumed and record the reason.
+  When the local `web-view-terra` launcher is available, use
+  `web-view-terra run <worktree> <run-directory> <briefing-file>` with the same
+  worktree and run directory and a new briefing file for each correction.
+- Use local completion detection. The launcher records the process exit status,
+  final report, and Codex event log, then signals the coordinating agent via
+  tmux. Use an overall deadline and retain the records after the session ends.
+  The coordinating agent checks the delivery and handles a failure, timeout, or
+  incomplete result before starting validation. Revisit conversation events if
+  a future workflow needs to resume after the coordinating turn closes.
+- After development, launch a fresh test agent in a separate tmux session and
+  follow Independent headed validation below. Give the test agent the installed
+  skill, scenario, and success criteria. Keep the implementation briefing and
+  development transcript out of its context so it can find its own path.
+  Give it the candidate executable's path when an older installation could also
+  be on its `PATH`.
+- Require the test agent's final report to identify the executable it ran and
+  the version it verified. Have it confirm that it read the installed `SKILL.md`
+  and give its path and stated version when available. It should describe the
+  browser setup, scenarios, outcomes, and evidence.
+  Ask it to distinguish defects from unverified behavior and report any
+  workaround or environment mismatch. Confirm the report matches the expected
+  candidate before accepting the handoff.
+- Reuse one dedicated Chrome instance for the pilot's headed tests and
+  diagnostics. If it must be replaced, close the pilot's instance before
+  starting another. Preserve any browser sessions the user already had open.
+- Record elapsed time and available token usage by phase, handoff delays,
+  coordinator interventions, rework, and the independent test outcome. Use those
+  observations to propose and check improvements over comparable issues.
+
 ## Independent headed validation
 
 - Before presenting an implementation as ready for review, test it with a fresh,
@@ -79,10 +129,12 @@ The user's instructions take precedence when a convention conflicts with them.
 - Review and update the version, `CHANGELOG.md`, README, bundled skill, and
   relevant CLI help whenever the change affects them. Keep examples aligned with
   actual behavior and record corrections in the changelog.
-- Keep the user's installed CLI and skill current for testing, including changes
-  from an open PR when requested. Verify the installed version and preserve the
-  configured skill source and symlink. State when the installation tracks a PR
-  branch rather than `main`; do not publish a release or tag without approval.
+- Test changes from an open PR with an isolated CLI and skill installation. The
+  coordinating agent updates the user's default CLI and skill only after the
+  user confirms the PR was merged into `main`. Verify the merge and update from
+  the merged `main`, then verify both installed versions and preserve the
+  configured skill source and symlink. Do not publish a release or tag without
+  approval.
 
 ## Public repository and private context
 

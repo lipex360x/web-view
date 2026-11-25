@@ -709,3 +709,18 @@ uv run pytest
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+### Page load performance
+
+Run `web-view perf --url http://localhost:8000/ --trace /tmp/navigation.json`
+or `web-view perf --reload --tab 0`. The command prints JSON and stops after the
+selected tab's load event; `--timeout` sets the navigation deadline in seconds
+(default 30). On a navigation timeout, loading is stopped in the selected tab.
+Import the optional trace in Chrome DevTools Performance. The trace starts before
+navigation and ends after the report is collected.
+
+Navigation timings, resource durations, and LCP are in milliseconds; CLS is
+unitless. Resources are ordered by duration and include completed requests observed
+before load. LCP and CLS can be null when unavailable; zero is a measurement. These values describe
+one local run and only the window observed through load; later shifts, paints,
+and requests are excluded. Browser caches and background activity affect results.

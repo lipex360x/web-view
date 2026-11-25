@@ -21,6 +21,7 @@ from . import (
     _list,
     _navigate,
     _page_state,
+    _perf,
     _resize,
     _snap,
     _start,
@@ -74,6 +75,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _eval.register(subparsers)
     _inspect.register(subparsers)
     _page_state.register(subparsers)
+    _perf.register(subparsers)
     _wait.register(subparsers)
     _download.register(subparsers)
     _install.register(subparsers)
