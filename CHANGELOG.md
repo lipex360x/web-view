@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- `web-view perf` measures one navigation or reload and reports navigation timings,
+  resource durations, and observed LCP and CLS through the load event. It can
+  also export a Chrome DevTools trace. A navigation timeout stops loading the
+  selected tab before the command removes its instrumentation.
 - `snap --stdout` prints a bounded accessibility snapshot without saving a file;
   `--max-chars` changes the limit or explicitly requests the complete tree.
 - `inspect --visibility` reports bounded visibility evidence for matching DOM

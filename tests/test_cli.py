@@ -1331,3 +1331,10 @@ def test_version_flag_reports_installed_version(capsys: pytest.CaptureFixture[st
             _run([flag])
         assert exit_information.value.code == 0
         assert capsys.readouterr().out.strip() == expected
+
+
+def test_perf_requires_navigation_choice(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as error:
+        _run(["perf"])
+    assert error.value.code == 2
+    assert "--url" in capsys.readouterr().err
